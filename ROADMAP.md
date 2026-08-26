@@ -125,7 +125,7 @@ Goal: move from only `latest` to predictable releases.
 - [ ] Publish `latest` only from the intended stable branch/release path
 - [ ] Add Docker image metadata/labels
 - [ ] Add build caching where useful
-- [ ] Add workflow concurrency protection if duplicate builds become a problem
+- [x] Add workflow concurrency protection if duplicate builds become a problem
 - [ ] Verify GHCR package visibility and pull instructions
 - [ ] Document image tags in README
 
@@ -256,3 +256,4 @@ Use this section for major milestones rather than every small commit.
 - `start.sh` stored as an executable file in Git.
 - `Build and Publish Docker Image` workflow completed successfully.
 - Development roadmap created.
+- Fixed overlapping workflow runs overwriting `latest` with an older image and added concurrency protection.

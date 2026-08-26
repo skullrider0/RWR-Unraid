@@ -34,3 +34,7 @@ Use a dedicated Steam account that owns RWR rather than your primary account.
 6. Add the raw template URL to Unraid's template repository list.
 
 The included template uses TCP/UDP port 1238 by default. Change it if your RWR server configuration uses another port.
+
+## Development Roadmap
+
+See [`ROADMAP.md`](ROADMAP.md) for current project status, priorities, future milestones, and instructions for continuing development in future ChatGPT sessions.

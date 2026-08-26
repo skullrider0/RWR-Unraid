@@ -10,15 +10,17 @@
   <Privileged>false</Privileged>
   <Support>https://github.com/skullrider0/RWR-Unraid/issues</Support>
   <Project>https://runningwithrifles.com/</Project>
-  <Overview>Running With Rifles dedicated server for Unraid. Uses SteamCMD to install/update AppID 270150 and keeps server data persistent.</Overview>
+  <Overview>Running With Rifles dedicated server for Unraid. Uses SteamCMD to install/update AppID 270150, automatically starts the vanilla invasion mode, and keeps server data persistent. A direct cache-pool path is required because RWR's older resource loader is incompatible with the /mnt/user FUSE path.</Overview>
   <WebUI></WebUI>
   <TemplateURL>https://raw.githubusercontent.com/skullrider0/RWR-Unraid/main/templates/RunningWithRifles.xml</TemplateURL>
   <Shell>bash</Shell>
   <ExtraParams>--restart=unless-stopped</ExtraParams>
-  <Config Name="Server Data" Target="/serverdata" Default="/mnt/user/appdata/rwr-server" Mode="rw" Description="Persistent RWR and SteamCMD data." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/rwr-server</Config>
+  <Config Name="Server Data" Target="/serverdata" Default="/mnt/cache/appdata/rwr-server" Mode="rw" Description="Persistent RWR data. Use the direct pool path (/mnt/cache or /mnt/your-pool), not /mnt/user, because the RWR resource loader fails through Unraid FUSE." Type="Path" Display="always" Required="true" Mask="false">/mnt/cache/appdata/rwr-server</Config>
   <Config Name="Steam Username" Target="STEAM_USER" Default="" Mode="" Description="Steam account username. Use a dedicated Steam account that owns RWR." Type="Variable" Display="always" Required="true" Mask="false"></Config>
   <Config Name="Steam Password" Target="STEAM_PASS" Default="" Mode="" Description="Steam account password." Type="Variable" Display="always" Required="true" Mask="true"></Config>
   <Config Name="Update On Start" Target="UPDATE_ON_START" Default="false" Mode="" Description="Set true to update RWR through SteamCMD before starting." Type="Variable" Display="always" Required="true" Mask="false">false</Config>
+  <Config Name="Automatic Game Start" Target="AUTO_START" Default="true" Mode="" Description="Automatically start the selected RWR script after the game console is ready." Type="Variable" Display="always" Required="true" Mask="false">true</Config>
+  <Config Name="Game Mode Script" Target="START_SCRIPT" Default="start_invasion.as" Mode="" Description="RWR AngelScript startup file. The supported vanilla dedicated-server default is start_invasion.as." Type="Variable" Display="always" Required="true" Mask="false">start_invasion.as</Config>
   <Config Name="RWR TCP Port" Target="1238" Default="1238" Mode="tcp" Description="RWR server TCP port." Type="Port" Display="always" Required="true" Mask="false">1238</Config>
   <Config Name="RWR UDP Port" Target="1238" Default="1238" Mode="udp" Description="RWR server UDP port." Type="Port" Display="always" Required="true" Mask="false">1238</Config>
 </Container>

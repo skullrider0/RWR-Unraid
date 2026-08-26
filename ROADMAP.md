@@ -37,16 +37,16 @@ Goal: prove that a fresh Unraid installation can pull the image, install RWR, la
 
 - [x] Pull `ghcr.io/skullrider0/rwr-unraid:latest` on Unraid
 - [x] Install container using `templates/RunningWithRifles.xml`
-- [x] Confirm `/mnt/user/appdata/rwr-server` persists to `/serverdata`
+- [x] Confirm `/mnt/cache/appdata/rwr-server` persists to `/serverdata`
 - [x] Confirm Steam authentication works
 - [x] Confirm SteamCMD installs AppID `270150`
-- [ ] Confirm the correct RWR server executable is located automatically
-- [ ] Confirm RWR dedicated server reaches a stable running state
+- [x] Confirm the correct RWR server executable is located automatically
+- [x] Confirm RWR dedicated server reaches a stable running state
 - [ ] Confirm TCP/UDP port `1238` works with the server configuration
 - [ ] Restart container and verify no unnecessary reinstall occurs
 - [ ] Recreate container and verify server data survives
 - [ ] Test `UPDATE_ON_START=true`
-- [ ] Record any required RWR-specific launch arguments or configuration files
+- [x] Record the required RWR startup command and configuration files
 
 ### Definition of Done
 
@@ -259,3 +259,6 @@ Use this section for major milestones rather than every small commit.
 - Fixed overlapping workflow runs overwriting `latest` with an older image and added concurrency protection.
 - Validated the Unraid image pull, template deployment, persistent storage, Steam authentication, and AppID `270150` installation.
 - Updated executable discovery to prefer RWR's `launch_server` wrapper so bundled libraries load correctly.
+- Identified Unraid `/mnt/user` FUSE as the cause of RWR resource enumeration failures; validated the direct `/mnt/cache` pool path.
+- Confirmed the RWR 1.98.1 server reaches `Game loaded` and successfully compiles and loads `start_invasion.as` on a real Unraid host.
+- Added automatic vanilla invasion startup after the RWR game console becomes ready.

@@ -47,4 +47,90 @@ if [ -z "$SERVER_BIN" ]; then SERVER_BIN="$(find "$SERVERDIR" -maxdepth 4 -type 
 if [ -z "$SERVER_BIN" ]; then echo "ERROR: Could not find the RWR server executable."; find "$SERVERDIR" -maxdepth 3 -type f | head -n 100; exit 1; fi
 echo "Launching RWR server with: $SERVER_BIN"
 cd "$(dirname "$SERVER_BIN")"
-exec "$SERVER_BIN"
+
+AUTO_START="${AUTO_START:-true}"
+START_SCRIPT="${START_SCRIPT:-start_invasion.as}"
+STARTUP_TIMEOUT="${STARTUP_TIMEOUT:-180}"
+
+case "$AUTO_START" in
+  true|1|yes) ;;
+  false|0|no)
+    echo "Automatic game-mode startup disabled."
+    exec "$SERVER_BIN"
+    ;;
+  *)
+    echo "ERROR: AUTO_START must be true or false."
+    exit 1
+    ;;
+esac
+
+case "$START_SCRIPT" in
+  ""|*[!A-Za-z0-9._/-]*)
+    echo "ERROR: START_SCRIPT contains unsupported characters."
+    exit 1
+    ;;
+esac
+
+if ! [[ "$STARTUP_TIMEOUT" =~ ^[1-9][0-9]*$ ]]; then
+  echo "ERROR: STARTUP_TIMEOUT must be a positive number of seconds."
+  exit 1
+fi
+
+RUNTIME_DIR="$(mktemp -d)"
+COMMAND_PIPE="$RUNTIME_DIR/rwr-commands"
+CONSOLE_LOG="$RUNTIME_DIR/rwr-console.log"
+SERVER_PID=""
+mkfifo "$COMMAND_PIPE"
+touch "$CONSOLE_LOG"
+
+cleanup() {
+  exec 3>&- 2>/dev/null || true
+  rm -rf "$RUNTIME_DIR"
+}
+
+forward_shutdown() {
+  echo "Stopping RWR server..."
+  printf 'stop_server\n' >&3 2>/dev/null || true
+  if [ -n "$SERVER_PID" ] && kill -0 "$SERVER_PID" 2>/dev/null; then
+    kill -TERM "$SERVER_PID" 2>/dev/null || true
+  fi
+}
+
+trap cleanup EXIT
+trap forward_shutdown TERM INT
+
+"$SERVER_BIN" <"$COMMAND_PIPE" > >(tee "$CONSOLE_LOG") 2>&1 &
+SERVER_PID=$!
+exec 3>"$COMMAND_PIPE"
+
+SERVER_READY=false
+for ((second = 0; second < STARTUP_TIMEOUT; second++)); do
+  if grep -q "Game loaded" "$CONSOLE_LOG"; then
+    SERVER_READY=true
+    break
+  fi
+
+  if ! kill -0 "$SERVER_PID" 2>/dev/null; then
+    echo "ERROR: RWR exited before reaching the game console."
+    wait "$SERVER_PID" || true
+    exit 1
+  fi
+
+  sleep 1
+done
+
+if [ "$SERVER_READY" != "true" ]; then
+  echo "ERROR: RWR did not reach the game console within ${STARTUP_TIMEOUT} seconds."
+  kill -TERM "$SERVER_PID" 2>/dev/null || true
+  wait "$SERVER_PID" || true
+  exit 1
+fi
+
+echo "Starting RWR game mode with script: $START_SCRIPT"
+printf 'start_script %s\n' "$START_SCRIPT" >&3
+
+set +e
+wait "$SERVER_PID"
+SERVER_STATUS=$?
+set -e
+exit "$SERVER_STATUS"

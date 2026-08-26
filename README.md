@@ -9,19 +9,25 @@ GitHub-ready Docker repository for a Running With Rifles dedicated server on Unr
 - Steam credentials configured in the Unraid template
 - Optional update on container startup
 - Automatically provisions default RWR `config.xml` and `settings.xml`
+- Automatically starts the vanilla invasion script after RWR finishes loading
 - Preserves existing configuration files and server data across container recreation/restarts
 
 ## Unraid
 
-Recommended mapping:
+Required mapping for the default cache pool:
 
-`/mnt/user/appdata/rwr-server` -> `/serverdata`
+`/mnt/cache/appdata/rwr-server` -> `/serverdata`
+
+If your pool has another name, replace `cache` with that pool name. Do not use `/mnt/user/appdata/rwr-server` for the server files. RWR uses an older OGRE resource loader that can open individual files through Unraid's FUSE user-share path but fails to enumerate required resources such as `map_config.xml`. The direct pool path was validated on a real Unraid installation.
 
 Environment variables:
 
 - `STEAM_USER` - Steam account username
 - `STEAM_PASS` - Steam account password
 - `UPDATE_ON_START` - `false` normally; `true` to update before startup
+- `AUTO_START` - `true` to start a game mode when the RWR console is ready
+- `START_SCRIPT` - game-mode script; defaults to `start_invasion.as`
+- `STARTUP_TIMEOUT` - optional console-readiness timeout in seconds; defaults to `180`
 
 Use a dedicated Steam account that owns RWR rather than your primary account.
 
@@ -31,6 +37,26 @@ On startup, missing configuration files are copied to:
 - `/serverdata/serverfiles/settings.xml`
 
 Existing files at those paths are never overwritten. The default settings select the vanilla lobby map required for the server to initialize.
+
+After the lobby reaches `Game loaded`, the startup controller sends:
+
+```text
+start_script start_invasion.as
+```
+
+Set `AUTO_START=false` if you intentionally want the RWR console to remain in the lobby without starting a game-mode script.
+
+### Unraid FUSE startup failure
+
+If the server ends with the following messages, verify that the container path uses `/mnt/cache/...` or another direct pool path rather than `/mnt/user/...`:
+
+```text
+loading map config
+CHECK: map_config element not found
+!!!EXECUTION HALTED!!!
+```
+
+This error can occur even when the files are present and readable. It was resolved on the test system by changing only the host mapping from `/mnt/user/appdata/rwr-server` to `/mnt/cache/appdata/rwr-server`.
 
 ## GitHub / GHCR
 

@@ -1,0 +1,76 @@
+<settings version="162">
+    <shadows value="2" />
+    <post_processing value="1" />
+    <mouse sensitivity="0.500000" wheel_sensitivity="0.500000" />
+    <aim_helper value="2" />
+    <player_marker value="1" />
+    <keyboard_controls>
+        <control0 value="17" />
+        <control1 value="31" />
+        <control2 value="30" />
+        <control3 value="32" />
+        <control5 value="19" />
+        <control6 value="34" />
+        <control7 value="35" />
+        <control8 value="47" />
+        <control9 value="57" />
+        <control10 value="29" />
+        <control11 value="46" />
+        <control12 value="42" />
+        <control13 value="33" />
+        <control14 value="20" />
+        <control16 value="28" />
+        <control19 value="48" />
+        <control20 value="15" />
+        <control21 value="59" />
+        <control22 value="201" />
+        <control23 value="209" />
+        <control24 value="219" />
+        <control37 value="78" />
+        <control38 value="12" />
+        <control44 value="60" />
+        <control45 value="21" />
+        <control52 value="2" />
+        <control53 value="3" />
+        <control54 value="45" />
+    </keyboard_controls>
+    <mouse_controls>
+        <control4 value="0" />
+        <control15 value="1" />
+    </mouse_controls>
+    <enabled_campaign_overlays />
+    <map_resource_location>media/packages/vanilla/maps/lobby</map_resource_location>
+    <clean_up_bodies_threshold value="20" />
+    <score_notification value="1" />
+    <bullet_trails value="1.000000" />
+    <isoline_occurrence value="0.498000" />
+    <isoline_intensity value="0.040000" />
+    <camera_smooth_factor value="0.130000" />
+    <aim_helper_speed value="0.015000" />
+    <back_line_intensity value="0.150000" />
+    <voxel_density_adjust value="2" />
+    <voxel_size_adjust value="0.500000" />
+    <voxel_shading value="1" />
+    <ground_decoration value="1" />
+    <water_detail value="1" />
+    <global_particle_effect value="1" />
+    <surface_effect value="1" />
+    <shadow_depth_bias value="0.005000" />
+    <commander_notifications value="1.000000" />
+    <gore_factor value="1.000000" />
+    <ambient_audio_volume value="1.000000" />
+    <foreground_audio_volume value="1.000000" />
+    <music_volume value="1.000000" />
+    <key_helpers value="1" />
+    <transparent_bubbles value="0" />
+    <field_inspector_level value="2" />
+    <message_class_0 value="1" />
+    <message_class_1 value="1" />
+    <message_class_2 value="1" />
+    <message_class_3 value="1" />
+    <fov_visualization_mode value="1" />
+    <journal_notifications value="1" />
+    <aim_assist value="1" />
+    <skinpack value="-1" />
+    <calls_skinpack value="-1" />
+</settings>

@@ -35,11 +35,11 @@ Last major foundation milestone: **GitHub Actions build succeeded on August 26, 
 
 Goal: prove that a fresh Unraid installation can pull the image, install RWR, launch the dedicated server, persist its files, and restart cleanly.
 
-- [ ] Pull `ghcr.io/skullrider0/rwr-unraid:latest` on Unraid
-- [ ] Install container using `templates/RunningWithRifles.xml`
-- [ ] Confirm `/mnt/user/appdata/rwr-server` persists to `/serverdata`
-- [ ] Confirm Steam authentication works
-- [ ] Confirm SteamCMD installs AppID `270150`
+- [x] Pull `ghcr.io/skullrider0/rwr-unraid:latest` on Unraid
+- [x] Install container using `templates/RunningWithRifles.xml`
+- [x] Confirm `/mnt/user/appdata/rwr-server` persists to `/serverdata`
+- [x] Confirm Steam authentication works
+- [x] Confirm SteamCMD installs AppID `270150`
 - [ ] Confirm the correct RWR server executable is located automatically
 - [ ] Confirm RWR dedicated server reaches a stable running state
 - [ ] Confirm TCP/UDP port `1238` works with the server configuration
@@ -89,7 +89,7 @@ Goal: make failures obvious and container behavior predictable.
 - [ ] Avoid creating `.rwr-installed` unless installation really succeeded
 - [ ] Verify executable permissions after SteamCMD updates
 - [ ] Add graceful SIGTERM/shutdown handling if RWR requires it
-- [ ] Improve server executable detection using verified RWR install paths
+- [x] Improve server executable detection using verified RWR install paths
 - [ ] Add useful startup diagnostics without exposing passwords
 - [ ] Add optional install validation mode
 - [ ] Determine whether automatic retry behavior is useful for transient Steam failures
@@ -257,3 +257,5 @@ Use this section for major milestones rather than every small commit.
 - `Build and Publish Docker Image` workflow completed successfully.
 - Development roadmap created.
 - Fixed overlapping workflow runs overwriting `latest` with an older image and added concurrency protection.
+- Validated the Unraid image pull, template deployment, persistent storage, Steam authentication, and AppID `270150` installation.
+- Updated executable discovery to prefer RWR's `launch_server` wrapper so bundled libraries load correctly.

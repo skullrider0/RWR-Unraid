@@ -8,7 +8,8 @@ GitHub-ready Docker repository for a Running With Rifles dedicated server on Unr
 - Persistent `/serverdata`
 - Steam credentials configured in the Unraid template
 - Optional update on container startup
-- Server data survives container recreation/restarts
+- Automatically provisions default RWR `config.xml` and `settings.xml`
+- Preserves existing configuration files and server data across container recreation/restarts
 
 ## Unraid
 
@@ -23,6 +24,13 @@ Environment variables:
 - `UPDATE_ON_START` - `false` normally; `true` to update before startup
 
 Use a dedicated Steam account that owns RWR rather than your primary account.
+
+On startup, missing configuration files are copied to:
+
+- `/serverdata/serverfiles/config.xml`
+- `/serverdata/serverfiles/settings.xml`
+
+Existing files at those paths are never overwritten. The default settings select the vanilla lobby map required for the server to initialize.
 
 ## GitHub / GHCR
 

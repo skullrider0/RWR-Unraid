@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-STEAMCMD="/serverdata/steamcmd/steamcmd.sh"
+STEAMCMD="/opt/steamcmd/steamcmd.sh"
 SERVERDIR="/serverdata/serverfiles"
 MARKER="$SERVERDIR/.rwr-installed"
 mkdir -p "$SERVERDIR"

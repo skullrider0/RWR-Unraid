@@ -5,6 +5,7 @@ RUN useradd -m -u 99 -U -s /bin/bash steam && mkdir -p /opt/steamcmd /serverdata
 USER steam
 WORKDIR /opt/steamcmd
 RUN curl -fsSL https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz | tar -xzf -
+COPY --chown=steam:steam defaults/ /opt/rwr-defaults/
 COPY --chown=steam:steam start.sh /start.sh
 RUN chmod +x /start.sh
 WORKDIR /serverdata

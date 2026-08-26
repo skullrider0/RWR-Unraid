@@ -3,6 +3,7 @@ set -e
 STEAMCMD="/opt/steamcmd/steamcmd.sh"
 STEAMCMDDIR="/opt/steamcmd"
 SERVERDIR="/serverdata/serverfiles"
+DEFAULTSDIR="/opt/rwr-defaults"
 MARKER="$SERVERDIR/.rwr-installed"
 mkdir -p "$SERVERDIR"
 echo "=============================================="
@@ -17,6 +18,13 @@ elif [ "${UPDATE_ON_START:-false}" = "true" ]; then
   echo "Startup update requested..."
   "$STEAMCMD" +force_install_dir "$SERVERDIR" +login "$STEAM_USER" "$STEAM_PASS" +app_update 270150 +quit
 fi
+
+for config_file in config.xml settings.xml; do
+  if [ ! -f "$SERVERDIR/$config_file" ]; then
+    echo "Creating default RWR $config_file..."
+    install -m 0644 "$DEFAULTSDIR/$config_file" "$SERVERDIR/$config_file"
+  fi
+done
 
 STEAMCLIENT="$STEAMCMDDIR/linux32/steamclient.so"
 if [ ! -f "$STEAMCLIENT" ]; then

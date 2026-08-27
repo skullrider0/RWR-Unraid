@@ -65,6 +65,7 @@ Investigate the actual RWR dedicated-server configuration format first. Do not i
 Potential settings:
 
 - [x] Server name
+- [x] Server comment / website
 - [ ] Server password
 - [ ] Admin password
 - [x] Player limit
@@ -72,6 +73,7 @@ Potential settings:
 - [ ] Map / rotation settings
 - [x] Server port
 - [x] Public/private visibility
+- [x] Profile persistence mode
 - [ ] Additional RWR launch parameters
 - [ ] Optional raw `SERVER_ARGS` environment variable for advanced users
 

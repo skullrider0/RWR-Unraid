@@ -13,7 +13,10 @@ printf '%s\n' \
   "<command class='start_server'" \
   "  server_name='MyInvasion'" \
   "  server_port='1240'" \
+  "  comment='Coop campaign'" \
+  "  url=''" \
   "  register_in_serverlist='1'" \
+  "  persistency='forever'" \
   "  max_players='32'>" \
   "  <client_faction id='0' />" \
   '</command>' \
@@ -24,15 +27,21 @@ printf '%s\n' \
 SOURCE_CHECKSUM="$(sha256sum "$SOURCE_SCRIPT" | awk '{print $1}')"
 
 SERVER_NAME='Test Server' \
+SERVER_COMMENT='Test campaign' \
+SERVER_URL='https://example.com/rwr' \
 SERVER_PORT=1250 \
 MAX_PLAYERS=40 \
 PUBLIC_SERVER=false \
 FACTION=2 \
+PERSISTENCY=forever_and_match \
   "$REPOSITORY_ROOT/render-start-script.sh" "$SOURCE_SCRIPT" "$RENDERED_SCRIPT"
 
 grep -Fq "server_name='Test Server'" "$RENDERED_SCRIPT"
+grep -Fq "comment='Test campaign'" "$RENDERED_SCRIPT"
+grep -Fq "url='https://example.com/rwr'" "$RENDERED_SCRIPT"
 grep -Fq "server_port='1250'" "$RENDERED_SCRIPT"
 grep -Fq "register_in_serverlist='0'" "$RENDERED_SCRIPT"
+grep -Fq "persistency='forever_and_match'" "$RENDERED_SCRIPT"
 grep -Fq "max_players='40'" "$RENDERED_SCRIPT"
 grep -Fq "<client_faction id='2' />" "$RENDERED_SCRIPT"
 
@@ -48,5 +57,18 @@ if SERVER_PORT=0 \
   exit 1
 fi
 
-echo "RWR startup-script rendering tests passed."
+if PERSISTENCY=invalid \
+  "$REPOSITORY_ROOT/render-start-script.sh" "$SOURCE_SCRIPT" "$TEST_DIRECTORY/invalid-persistency.as" \
+  >/dev/null 2>&1; then
+  echo "Invalid PERSISTENCY was accepted."
+  exit 1
+fi
 
+if SERVER_URL='https://example.com/?a=1&b=2' \
+  "$REPOSITORY_ROOT/render-start-script.sh" "$SOURCE_SCRIPT" "$TEST_DIRECTORY/invalid-url.as" \
+  >/dev/null 2>&1; then
+  echo "Unsafe SERVER_URL was accepted."
+  exit 1
+fi
+
+echo "RWR startup-script rendering tests passed."

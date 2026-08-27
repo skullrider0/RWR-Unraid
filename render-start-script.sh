@@ -5,10 +5,13 @@ SOURCE_SCRIPT="${1:?Usage: rwr-render-start-script SOURCE DESTINATION}"
 DESTINATION_SCRIPT="${2:?Usage: rwr-render-start-script SOURCE DESTINATION}"
 
 SERVER_NAME="${SERVER_NAME:-MyInvasion}"
+SERVER_COMMENT="${SERVER_COMMENT:-Coop campaign}"
+SERVER_URL="${SERVER_URL:-}"
 SERVER_PORT="${SERVER_PORT:-1240}"
 MAX_PLAYERS="${MAX_PLAYERS:-32}"
 PUBLIC_SERVER="${PUBLIC_SERVER:-true}"
 FACTION="${FACTION:-0}"
+PERSISTENCY="${PERSISTENCY:-forever}"
 
 validate_text() {
   local name="$1"
@@ -33,6 +36,13 @@ validate_number() {
 }
 
 validate_text SERVER_NAME "$SERVER_NAME"
+validate_text SERVER_COMMENT "$SERVER_COMMENT"
+
+if [[ -n "$SERVER_URL" ]] && [[ ! "$SERVER_URL" =~ ^[A-Za-z0-9][A-Za-z0-9._:/?=%#-]*$ ]]; then
+  echo "ERROR: SERVER_URL contains unsupported characters."
+  exit 1
+fi
+
 validate_number SERVER_PORT "$SERVER_PORT" 1 65535
 validate_number MAX_PLAYERS "$MAX_PLAYERS" 1 256
 
@@ -53,6 +63,14 @@ case "$FACTION" in
     ;;
 esac
 
+case "$PERSISTENCY" in
+  forever|forever_and_match) ;;
+  *)
+    echo "ERROR: PERSISTENCY must be forever or forever_and_match."
+    exit 1
+    ;;
+esac
+
 if [ ! -f "$SOURCE_SCRIPT" ]; then
   echo "ERROR: RWR startup script not found: $SOURCE_SCRIPT"
   exit 1
@@ -64,16 +82,22 @@ cp "$SOURCE_SCRIPT" "$TEMP_SCRIPT"
 
 sed -E -i \
   -e "s|server_name='[^']*'|server_name='$SERVER_NAME'|" \
+  -e "s|comment='[^']*'|comment='$SERVER_COMMENT'|" \
+  -e "s|url='[^']*'|url='$SERVER_URL'|" \
   -e "s|server_port='[0-9]+'|server_port='$SERVER_PORT'|" \
   -e "s|register_in_serverlist='[01]'|register_in_serverlist='$REGISTER_IN_SERVERLIST'|" \
+  -e "s|persistency='[^']*'|persistency='$PERSISTENCY'|" \
   -e "s|max_players='[0-9]+'|max_players='$MAX_PLAYERS'|" \
   -e "s|<client_faction id='[0-9]+' */>|<client_faction id='$FACTION' />|" \
   "$TEMP_SCRIPT"
 
 for expected_setting in \
   "server_name='$SERVER_NAME'" \
+  "comment='$SERVER_COMMENT'" \
+  "url='$SERVER_URL'" \
   "server_port='$SERVER_PORT'" \
   "register_in_serverlist='$REGISTER_IN_SERVERLIST'" \
+  "persistency='$PERSISTENCY'" \
   "max_players='$MAX_PLAYERS'" \
   "<client_faction id='$FACTION' />"; do
   if ! grep -Fq "$expected_setting" "$TEMP_SCRIPT"; then

@@ -42,9 +42,9 @@ Goal: prove that a fresh Unraid installation can pull the image, install RWR, la
 - [x] Confirm SteamCMD installs AppID `270150`
 - [x] Confirm the correct RWR server executable is located automatically
 - [x] Confirm RWR dedicated server reaches a stable running state
-- [ ] Confirm TCP/UDP port `1240` works with the server configuration
-- [ ] Restart container and verify no unnecessary reinstall occurs
-- [ ] Recreate container and verify server data survives
+- [x] Confirm TCP/UDP port `1240` works with the server configuration
+- [x] Restart container and verify no unnecessary reinstall occurs
+- [x] Recreate container and verify server data survives
 - [ ] Test `UPDATE_ON_START=true`
 - [x] Record the required RWR startup command and configuration files
 
@@ -62,14 +62,14 @@ Investigate the actual RWR dedicated-server configuration format first. Do not i
 
 Potential settings:
 
-- [ ] Server name
+- [x] Server name
 - [ ] Server password
 - [ ] Admin password
-- [ ] Player limit
+- [x] Player limit
 - [ ] Game mode / campaign
 - [ ] Map / rotation settings
-- [ ] Server port
-- [ ] Public/private visibility
+- [x] Server port
+- [x] Public/private visibility
 - [ ] Additional RWR launch parameters
 - [ ] Optional raw `SERVER_ARGS` environment variable for advanced users
 
@@ -144,10 +144,10 @@ v1.1.0
 
 Goal: catch broken Dockerfiles and startup scripts before publishing them.
 
-- [ ] Shell syntax validation for `start.sh`
+- [x] Shell syntax validation for `start.sh`
 - [ ] ShellCheck for `start.sh`
 - [ ] Docker build validation in CI
-- [ ] XML validation for the Unraid template
+- [x] XML validation for the Unraid template
 - [ ] Verify expected files exist in the built image
 - [ ] Test container startup behavior without exposing real Steam credentials
 - [ ] Add tests for executable-discovery logic
@@ -267,3 +267,6 @@ Use this section for major milestones rather than every small commit.
 - Identified Unraid `/mnt/user` FUSE as the cause of RWR resource enumeration failures; validated the direct `/mnt/cache` pool path.
 - Confirmed the RWR 1.98.1 server reaches `Game loaded` and successfully compiles and loads `start_invasion.as` on a real Unraid host.
 - Added automatic vanilla invasion startup after the RWR game console becomes ready.
+- Confirmed successful client connectivity on port `1240`, restart behavior, and persistence after recreating the Unraid container.
+- Added managed vanilla invasion settings for server name, port, player limit, public visibility, and client faction without modifying the installed upstream script.
+- Added CI validation for shell syntax, managed-script rendering, and Unraid template XML.

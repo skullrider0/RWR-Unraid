@@ -28,6 +28,11 @@ Environment variables:
 - `AUTO_START` - `true` to start a game mode when the RWR console is ready
 - `START_SCRIPT` - game-mode script; defaults to `start_invasion.as`
 - `STARTUP_TIMEOUT` - optional console-readiness timeout in seconds; defaults to `180`
+- `SERVER_NAME` - public/direct-connect server name; defaults to `MyInvasion`
+- `SERVER_PORT` - port written into the vanilla invasion script; defaults to `1240`
+- `MAX_PLAYERS` - player limit; defaults to `32`
+- `PUBLIC_SERVER` - `true` to register in the RWR server list; `false` for direct-connect only
+- `FACTION` - client faction: `0` greenbelts, `1` graycollars, or `2` brownpants
 
 Use a dedicated Steam account that owns RWR rather than your primary account.
 
@@ -47,6 +52,12 @@ start_script start_invasion.as
 ```
 
 Set `AUTO_START=false` if you intentionally want the RWR console to remain in the lobby without starting a game-mode script.
+
+### Managed vanilla server settings
+
+When `START_SCRIPT=start_invasion.as`, the container copies the installed vanilla script to `rwr_unraid_start_invasion.as` and applies the verified Unraid settings above. The original game-provided `start_invasion.as` is never modified. The managed copy is regenerated after updates and on every container start, so changes made through the template remain consistent.
+
+If you change `SERVER_PORT`, update the TCP and UDP container mappings and router forwarding to the same port. Managed settings are intentionally skipped when `START_SCRIPT` points to a custom game-mode script because other scripts may use a different configuration structure.
 
 ### Unraid FUSE startup failure
 

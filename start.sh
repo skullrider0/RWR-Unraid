@@ -51,6 +51,7 @@ cd "$(dirname "$SERVER_BIN")"
 AUTO_START="${AUTO_START:-true}"
 START_SCRIPT="${START_SCRIPT:-start_invasion.as}"
 STARTUP_TIMEOUT="${STARTUP_TIMEOUT:-180}"
+MANAGE_SERVER_SETTINGS="${MANAGE_SERVER_SETTINGS:-true}"
 
 case "$AUTO_START" in
   true|1|yes) ;;
@@ -75,6 +76,25 @@ if ! [[ "$STARTUP_TIMEOUT" =~ ^[1-9][0-9]*$ ]]; then
   echo "ERROR: STARTUP_TIMEOUT must be a positive number of seconds."
   exit 1
 fi
+
+case "$MANAGE_SERVER_SETTINGS" in
+  true|1|yes)
+    if [ "$START_SCRIPT" = "start_invasion.as" ]; then
+      SOURCE_START_SCRIPT="$SERVERDIR/media/packages/vanilla/scripts/start_invasion.as"
+      MANAGED_START_SCRIPT="$SERVERDIR/media/packages/vanilla/scripts/rwr_unraid_start_invasion.as"
+      /usr/local/bin/rwr-render-start-script "$SOURCE_START_SCRIPT" "$MANAGED_START_SCRIPT"
+      START_SCRIPT="$(basename "$MANAGED_START_SCRIPT")"
+      echo "Configured managed RWR startup script: $START_SCRIPT"
+    else
+      echo "Managed server settings skipped for custom game-mode script: $START_SCRIPT"
+    fi
+    ;;
+  false|0|no) ;;
+  *)
+    echo "ERROR: MANAGE_SERVER_SETTINGS must be true or false."
+    exit 1
+    ;;
+esac
 
 RUNTIME_DIR="$(mktemp -d)"
 COMMAND_PIPE="$RUNTIME_DIR/rwr-commands"

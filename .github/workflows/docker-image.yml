@@ -22,6 +22,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Validate shell scripts
+        run: |
+          bash -n start.sh render-start-script.sh tests/test-render-start-script.sh
+          bash tests/test-render-start-script.sh
+
+      - name: Validate Unraid template XML
+        run: python3 -c 'import xml.etree.ElementTree as ET; ET.parse("templates/RunningWithRifles.xml")'
+
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:

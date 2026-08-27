@@ -3,7 +3,7 @@
   <Name>RunningWithRifles</Name>
   <Beta>False</Beta>
   <Category>GameServers:</Category>
-  <Date>2026-08-26</Date>
+  <Date>2026-08-27</Date>
   <Repository>ghcr.io/skullrider0/rwr-unraid:latest</Repository>
   <Registry>https://ghcr.io/</Registry>
   <Network>bridge</Network>
@@ -21,6 +21,11 @@
   <Config Name="Update On Start" Target="UPDATE_ON_START" Default="false" Mode="" Description="Set true to update RWR through SteamCMD before starting." Type="Variable" Display="always" Required="true" Mask="false">false</Config>
   <Config Name="Automatic Game Start" Target="AUTO_START" Default="true" Mode="" Description="Automatically start the selected RWR script after the game console is ready." Type="Variable" Display="always" Required="true" Mask="false">true</Config>
   <Config Name="Game Mode Script" Target="START_SCRIPT" Default="start_invasion.as" Mode="" Description="RWR AngelScript startup file. The supported vanilla dedicated-server default is start_invasion.as." Type="Variable" Display="always" Required="true" Mask="false">start_invasion.as</Config>
+  <Config Name="Server Name" Target="SERVER_NAME" Default="MyInvasion" Mode="" Description="Name shown for the RWR server. Applied to the managed vanilla invasion script." Type="Variable" Display="always" Required="true" Mask="false">MyInvasion</Config>
+  <Config Name="Server Port" Target="SERVER_PORT" Default="1240" Mode="" Description="Port written into the managed RWR invasion script. Keep this equal to both container port mappings." Type="Variable" Display="always" Required="true" Mask="false">1240</Config>
+  <Config Name="Maximum Players" Target="MAX_PLAYERS" Default="32" Mode="" Description="Maximum number of players accepted by the RWR server." Type="Variable" Display="always" Required="true" Mask="false">32</Config>
+  <Config Name="Public Server" Target="PUBLIC_SERVER" Default="true" Mode="" Description="Set true to register the server in the public RWR server list, or false for direct-connect only." Type="Variable" Display="always" Required="true" Mask="false">true</Config>
+  <Config Name="Player Faction" Target="FACTION" Default="0" Mode="" Description="Client faction for vanilla invasion: 0 greenbelts, 1 graycollars, or 2 brownpants." Type="Variable" Display="always" Required="true" Mask="false">0</Config>
   <Config Name="RWR TCP Port" Target="1240" Default="1240" Mode="tcp" Description="RWR server TCP port. The bundled vanilla start_invasion.as script listens on port 1240." Type="Port" Display="always" Required="true" Mask="false">1240</Config>
   <Config Name="RWR UDP Port" Target="1240" Default="1240" Mode="udp" Description="RWR server UDP port. The bundled vanilla start_invasion.as script listens on port 1240." Type="Port" Display="always" Required="true" Mask="false">1240</Config>
 </Container>

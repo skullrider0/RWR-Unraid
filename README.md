@@ -38,6 +38,8 @@ On startup, missing configuration files are copied to:
 
 Existing files at those paths are never overwritten. The default settings select the vanilla lobby map required for the server to initialize.
 
+The bundled vanilla `start_invasion.as` script starts its game server on port `1240`. Publish both TCP and UDP port `1240` from the container. If players connect over the internet, forward port `1240` to the Unraid server in the router and allow it through any host firewall.
+
 After the lobby reaches `Game loaded`, the startup controller sends:
 
 ```text
@@ -58,6 +60,10 @@ CHECK: map_config element not found
 
 This error can occur even when the files are present and readable. It was resolved on the test system by changing only the host mapping from `/mnt/user/appdata/rwr-server` to `/mnt/cache/appdata/rwr-server`.
 
+### Connection timeout with no server log entry
+
+If RWR reaches `Game loaded` but a client times out and the server logs no connection attempt, verify that the container publishes TCP/UDP port `1240`. The vanilla `start_invasion.as` shipped with RWR hard-codes `server_port='1240'`; publishing another container port will not reach the server.
+
 ## GitHub / GHCR
 
 1. Create a GitHub repository named `RWR-Unraid`.
@@ -67,7 +73,7 @@ This error can occur even when the files are present and readable. It was resolv
 5. Build/publish the image as `ghcr.io/skullrider0/rwr-unraid:latest`.
 6. Add the raw template URL to Unraid's template repository list.
 
-The included template uses TCP/UDP port 1238 by default. Change it if your RWR server configuration uses another port.
+The included template publishes TCP/UDP port `1240`, matching the bundled vanilla `start_invasion.as` script. Change both the RWR script and container mapping together if you intentionally configure another port.
 
 ## Development Roadmap
 

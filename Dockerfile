@@ -9,5 +9,5 @@ COPY --chown=steam:steam defaults/ /opt/rwr-defaults/
 COPY --chown=steam:steam start.sh /start.sh
 RUN chmod +x /start.sh
 WORKDIR /serverdata
-EXPOSE 1238/tcp 1238/udp
+EXPOSE 1240/tcp 1240/udp
 ENTRYPOINT ["/start.sh"]

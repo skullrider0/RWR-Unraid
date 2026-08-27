@@ -21,6 +21,6 @@
   <Config Name="Update On Start" Target="UPDATE_ON_START" Default="false" Mode="" Description="Set true to update RWR through SteamCMD before starting." Type="Variable" Display="always" Required="true" Mask="false">false</Config>
   <Config Name="Automatic Game Start" Target="AUTO_START" Default="true" Mode="" Description="Automatically start the selected RWR script after the game console is ready." Type="Variable" Display="always" Required="true" Mask="false">true</Config>
   <Config Name="Game Mode Script" Target="START_SCRIPT" Default="start_invasion.as" Mode="" Description="RWR AngelScript startup file. The supported vanilla dedicated-server default is start_invasion.as." Type="Variable" Display="always" Required="true" Mask="false">start_invasion.as</Config>
-  <Config Name="RWR TCP Port" Target="1238" Default="1238" Mode="tcp" Description="RWR server TCP port." Type="Port" Display="always" Required="true" Mask="false">1238</Config>
-  <Config Name="RWR UDP Port" Target="1238" Default="1238" Mode="udp" Description="RWR server UDP port." Type="Port" Display="always" Required="true" Mask="false">1238</Config>
+  <Config Name="RWR TCP Port" Target="1240" Default="1240" Mode="tcp" Description="RWR server TCP port. The bundled vanilla start_invasion.as script listens on port 1240." Type="Port" Display="always" Required="true" Mask="false">1240</Config>
+  <Config Name="RWR UDP Port" Target="1240" Default="1240" Mode="udp" Description="RWR server UDP port. The bundled vanilla start_invasion.as script listens on port 1240." Type="Port" Display="always" Required="true" Mask="false">1240</Config>
 </Container>

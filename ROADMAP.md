@@ -10,7 +10,7 @@ Provide a reliable, easy-to-install **Running With Rifles dedicated server Docke
 
 ## Current Status
 
-**Foundation: working**
+**Foundation and real Unraid deployment: validated**
 
 - [x] Repository structure corrected
 - [x] `Dockerfile` at repository root
@@ -25,13 +25,13 @@ Provide a reliable, easy-to-install **Running With Rifles dedicated server Docke
 - [x] Optional update-on-start logic
 - [x] RWR executable discovery logic
 
-Last major foundation milestone: **GitHub Actions build succeeded on August 26, 2026.**
+Last major foundation milestone: **Phase 1 real Unraid deployment validation completed on August 27, 2026.**
 
 ---
 
 # Phase 1 — Validate Real Unraid Deployment
 
-**Priority: NOW**
+**Status: COMPLETE**
 
 Goal: prove that a fresh Unraid installation can pull the image, install RWR, launch the dedicated server, persist its files, and restart cleanly.
 
@@ -45,7 +45,7 @@ Goal: prove that a fresh Unraid installation can pull the image, install RWR, la
 - [x] Confirm TCP/UDP port `1240` works with the server configuration
 - [x] Restart container and verify no unnecessary reinstall occurs
 - [x] Recreate container and verify server data survives
-- [ ] Test `UPDATE_ON_START=true`
+- [x] Test `UPDATE_ON_START=true`
 - [x] Record the required RWR startup command and configuration files
 
 ### Definition of Done
@@ -55,6 +55,8 @@ A new Unraid user can install the template, provide Steam credentials, start the
 ---
 
 # Phase 2 — Server Configuration Support
+
+**Priority: NOW**
 
 Goal: make common RWR server settings configurable from Unraid rather than requiring manual file editing.
 
@@ -270,3 +272,4 @@ Use this section for major milestones rather than every small commit.
 - Confirmed successful client connectivity on port `1240`, restart behavior, and persistence after recreating the Unraid container.
 - Added managed vanilla invasion settings for server name, port, player limit, public visibility, and client faction without modifying the installed upstream script.
 - Added CI validation for shell syntax, managed-script rendering, and Unraid template XML.
+- Completed Phase 1 after a credentialed `UPDATE_ON_START=true` run successfully checked AppID `270150`, regenerated the managed invasion script, and returned the server to a fully loaded state.

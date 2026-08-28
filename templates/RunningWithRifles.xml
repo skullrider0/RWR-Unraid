@@ -31,6 +31,7 @@
   <Config Name="Public Server" Target="PUBLIC_SERVER" Default="true" Mode="" Description="Set true to register the server in the public RWR server list, or false for direct-connect only." Type="Variable" Display="always" Required="true" Mask="false">true</Config>
   <Config Name="Player Faction" Target="FACTION" Default="0" Mode="" Description="Client faction for vanilla invasion: 0 greenbelts, 1 graycollars, or 2 brownpants." Type="Variable" Display="always" Required="true" Mask="false">0</Config>
   <Config Name="Profile Persistence" Target="PERSISTENCY" Default="forever" Mode="" Description="RWR profile persistence mode: forever or forever_and_match." Type="Variable" Display="always" Required="true" Mask="false">forever</Config>
+  <Config Name="Admin Usernames" Target="ADMIN_NAMES" Default="" Mode="" Description="Optional comma-separated RWR player usernames granted administrator access. Names are converted to lowercase and written to admins.xml." Type="Variable" Display="always" Required="false" Mask="false"></Config>
   <Config Name="RWR TCP Port" Target="1240" Default="1240" Mode="tcp" Description="RWR server TCP port. The bundled vanilla start_invasion.as script listens on port 1240." Type="Port" Display="always" Required="true" Mask="false">1240</Config>
   <Config Name="RWR UDP Port" Target="1240" Default="1240" Mode="udp" Description="RWR server UDP port. The bundled vanilla start_invasion.as script listens on port 1240." Type="Port" Display="always" Required="true" Mask="false">1240</Config>
 </Container>

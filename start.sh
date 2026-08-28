@@ -27,6 +27,8 @@ for config_file in config.xml settings.xml; do
   fi
 done
 
+/usr/local/bin/rwr-render-admins "$SERVERDIR/admins.xml"
+
 STEAMCLIENT="$STEAMCMDDIR/linux32/steamclient.so"
 if [ ! -f "$STEAMCLIENT" ]; then
   echo "Initializing Steam runtime..."

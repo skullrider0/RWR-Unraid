@@ -24,8 +24,9 @@ jobs:
 
       - name: Validate shell scripts
         run: |
-          bash -n start.sh start-options.sh render-start-script.sh tests/test-render-start-script.sh tests/test-start-options.sh
+          bash -n start.sh start-options.sh render-start-script.sh render-admins.sh tests/test-render-start-script.sh tests/test-render-admins.sh tests/test-start-options.sh
           bash tests/test-render-start-script.sh
+          bash tests/test-render-admins.sh
           bash tests/test-start-options.sh
 
       - name: Validate Unraid template XML

@@ -38,6 +38,7 @@ Environment variables:
 - `PUBLIC_SERVER` - `true` to register in the RWR server list; `false` for direct-connect only
 - `FACTION` - client faction: `0` greenbelts, `1` graycollars, or `2` brownpants
 - `PERSISTENCY` - profile persistence mode: `forever` (default) or `forever_and_match`
+- `ADMIN_NAMES` - optional comma-separated RWR usernames granted administrator access
 
 Use a dedicated Steam account that owns RWR rather than your primary account.
 
@@ -65,6 +66,8 @@ Set `AUTO_START=false` if you intentionally want the RWR console to remain in th
 For modes that require another RWR console verb, set `START_COMMAND` to one safe, single-line command. When it is set, the container sends it instead of `start_script START_SCRIPT`. `SERVER_ARGS` passes advanced whitespace-separated arguments directly to the server process without shell evaluation. Shell operators, command substitution, quoted multi-word arguments, and newlines are rejected; neither value is printed in full to the container log.
 
 RWR 1.98.1 does not expose a normal game-server join-password or admin-password setting in its dedicated-server command interface. `PUBLIC_SERVER=false` makes a server unlisted but does not password-protect it. Administrative access is username-based through RWR's `admins.xml`, not a shared admin password.
+
+Set `ADMIN_NAMES` to a comma-separated list such as `playerone,player two`. The container trims surrounding spaces, converts names to lowercase as required by RWR, validates them, and writes `/serverdata/serverfiles/admins.xml`. When `ADMIN_NAMES` is blank, an existing `admins.xml` is left untouched. When it is set, the template value becomes the managed source of truth and the file is regenerated at startup.
 
 ### Managed vanilla server settings
 

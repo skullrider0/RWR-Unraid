@@ -9,7 +9,8 @@ COPY --chown=steam:steam defaults/ /opt/rwr-defaults/
 COPY --chown=steam:steam start.sh /start.sh
 COPY --chown=steam:steam start-options.sh /usr/local/lib/rwr/start-options.sh
 COPY --chown=steam:steam render-start-script.sh /usr/local/bin/rwr-render-start-script
-RUN chmod +x /start.sh /usr/local/bin/rwr-render-start-script
+COPY --chown=steam:steam render-admins.sh /usr/local/bin/rwr-render-admins
+RUN chmod +x /start.sh /usr/local/bin/rwr-render-start-script /usr/local/bin/rwr-render-admins
 WORKDIR /serverdata
 EXPOSE 1240/tcp 1240/udp
 ENTRYPOINT ["/start.sh"]

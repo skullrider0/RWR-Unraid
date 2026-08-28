@@ -37,7 +37,7 @@ Environment variables:
 - `START_COMMAND` - optional advanced RWR console command used instead of `start_script`; blank by default
 - `SERVER_ARGS` - optional whitespace-separated arguments passed directly to the RWR executable
 - `STARTUP_TIMEOUT` - optional console-readiness timeout in seconds; defaults to `180`
-- `SHUTDOWN_TIMEOUT` - seconds allowed for console shutdown before SIGTERM; defaults to `20`
+- `SHUTDOWN_TIMEOUT` - seconds allowed for console shutdown before SIGTERM; defaults to `7`
 - `SERVER_NAME` - public/direct-connect server name; defaults to `MyInvasion`
 - `SERVER_COMMENT` - short server-list description; defaults to `Coop campaign`
 - `SERVER_URL` - optional server website URL; blank by default
@@ -65,7 +65,7 @@ If a marked installation is incomplete, the marker is removed and SteamCMD runs 
 
 SteamCMD retries transient connection failures according to `STEAMCMD_RETRIES`, but it does not repeatedly retry bad credentials, incomplete Steam Guard approval, missing game ownership, or a definite installation failure. Logs provide a targeted error without printing the configured password. Steam Guard approval can still be completed through the Steam Mobile app when SteamCMD requests it.
 
-When Unraid stops the container, the startup controller first sends `stop_server` to the RWR console and waits up to `SHUTDOWN_TIMEOUT` seconds. It then uses SIGTERM and finally SIGKILL only if RWR does not exit.
+When Unraid stops the container, the startup controller first sends `stop_server` to the RWR console and waits up to `SHUTDOWN_TIMEOUT` seconds. It then uses SIGTERM and finally SIGKILL only if RWR does not exit. The seven-second default plus its short signal fallback fits inside Docker's normal ten-second stop window.
 
 The bundled vanilla `start_invasion.as` script starts its game server on port `1240`. Publish both TCP and UDP port `1240` from the container. If players connect over the internet, forward port `1240` to the Unraid server in the router and allow it through any host firewall.
 

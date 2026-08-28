@@ -33,7 +33,7 @@ graceful_stop_rwr() {
 
   echo "RWR did not stop within $shutdown_timeout second(s); sending SIGTERM."
   kill -TERM "$process_id" 2>/dev/null || true
-  if wait_for_process_exit "$process_id" 5; then
+  if wait_for_process_exit "$process_id" 2; then
     return 0
   fi
 

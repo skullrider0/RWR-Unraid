@@ -7,6 +7,7 @@ WORKDIR /opt/steamcmd
 RUN curl -fsSL https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz | tar -xzf -
 COPY --chown=steam:steam defaults/ /opt/rwr-defaults/
 COPY --chown=steam:steam start.sh /start.sh
+COPY --chown=steam:steam start-options.sh /usr/local/lib/rwr/start-options.sh
 COPY --chown=steam:steam render-start-script.sh /usr/local/bin/rwr-render-start-script
 RUN chmod +x /start.sh /usr/local/bin/rwr-render-start-script
 WORKDIR /serverdata

@@ -56,7 +56,7 @@ A new Unraid user can install the template, provide Steam credentials, start the
 
 # Phase 2 — Server Configuration Support
 
-**Priority: NOW**
+**Status: FINAL VALIDATION**
 
 Goal: make common RWR server settings configurable from Unraid rather than requiring manual file editing.
 
@@ -66,20 +66,22 @@ Potential settings:
 
 - [x] Server name
 - [x] Server comment / website
-- [ ] Server password
-- [ ] Admin password
+- [x] Server password investigated — not exposed by the RWR 1.98.1 dedicated-server interface
+- [x] Admin password investigated — RWR uses a username allowlist instead of a shared password
 - [x] Player limit
-- [ ] Game mode / campaign
-- [ ] Map / rotation settings
+- [x] Game mode / campaign through `START_SCRIPT` or advanced `START_COMMAND`
+- [x] Map / rotation ownership documented as game-mode-script configuration
 - [x] Server port
 - [x] Public/private visibility
 - [x] Profile persistence mode
-- [ ] Additional RWR launch parameters
-- [ ] Optional raw `SERVER_ARGS` environment variable for advanced users
+- [x] Additional RWR launch parameters
+- [x] Optional raw `SERVER_ARGS` environment variable for advanced users
 
 ### Design rule
 
 Keep advanced configuration optional. A default installation should remain simple.
+
+Phase 2 can be marked complete after validating `SERVER_ARGS`/`START_COMMAND` in the published image and adding supported `admins.xml` provisioning from the game-provided example format.
 
 ---
 

@@ -27,6 +27,8 @@ Environment variables:
 - `UPDATE_ON_START` - `false` normally; `true` to update before startup
 - `AUTO_START` - `true` to start a game mode when the RWR console is ready
 - `START_SCRIPT` - game-mode script; defaults to `start_invasion.as`
+- `START_COMMAND` - optional advanced RWR console command used instead of `start_script`; blank by default
+- `SERVER_ARGS` - optional whitespace-separated arguments passed directly to the RWR executable
 - `STARTUP_TIMEOUT` - optional console-readiness timeout in seconds; defaults to `180`
 - `SERVER_NAME` - public/direct-connect server name; defaults to `MyInvasion`
 - `SERVER_COMMENT` - short server-list description; defaults to `Coop campaign`
@@ -55,6 +57,14 @@ start_script start_invasion.as
 ```
 
 Set `AUTO_START=false` if you intentionally want the RWR console to remain in the lobby without starting a game-mode script.
+
+### Game modes and advanced startup
+
+`START_SCRIPT` is the normal game-mode control. The verified default is `start_invasion.as`; the current RWR depot also contains dedicated AngelScript entry points such as `start_deathmatch_server.as` and `start_minimodes.as`. Non-invasion modes own their configuration and map rotation, so the container does not rewrite those scripts.
+
+For modes that require another RWR console verb, set `START_COMMAND` to one safe, single-line command. When it is set, the container sends it instead of `start_script START_SCRIPT`. `SERVER_ARGS` passes advanced whitespace-separated arguments directly to the server process without shell evaluation. Shell operators, command substitution, quoted multi-word arguments, and newlines are rejected; neither value is printed in full to the container log.
+
+RWR 1.98.1 does not expose a normal game-server join-password or admin-password setting in its dedicated-server command interface. `PUBLIC_SERVER=false` makes a server unlisted but does not password-protect it. Administrative access is username-based through RWR's `admins.xml`, not a shared admin password.
 
 ### Managed vanilla server settings
 

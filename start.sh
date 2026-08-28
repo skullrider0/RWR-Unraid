@@ -5,6 +5,7 @@ STEAMCMDDIR="/opt/steamcmd"
 SERVERDIR="/serverdata/serverfiles"
 DEFAULTSDIR="/opt/rwr-defaults"
 MARKER="$SERVERDIR/.rwr-installed"
+source /usr/local/lib/rwr/start-options.sh
 mkdir -p "$SERVERDIR"
 echo "=============================================="
 echo " Running With Rifles - Unraid Docker"
@@ -50,14 +51,17 @@ cd "$(dirname "$SERVER_BIN")"
 
 AUTO_START="${AUTO_START:-true}"
 START_SCRIPT="${START_SCRIPT:-start_invasion.as}"
+START_COMMAND="${START_COMMAND:-}"
 STARTUP_TIMEOUT="${STARTUP_TIMEOUT:-180}"
 MANAGE_SERVER_SETTINGS="${MANAGE_SERVER_SETTINGS:-true}"
+parse_server_arguments "${SERVER_ARGS:-}"
+validate_start_command "$START_COMMAND"
 
 case "$AUTO_START" in
   true|1|yes) ;;
   false|0|no)
     echo "Automatic game-mode startup disabled."
-    exec "$SERVER_BIN"
+    exec "$SERVER_BIN" "${SERVER_ARGUMENTS[@]}"
     ;;
   *)
     echo "ERROR: AUTO_START must be true or false."
@@ -119,7 +123,7 @@ forward_shutdown() {
 trap cleanup EXIT
 trap forward_shutdown TERM INT
 
-"$SERVER_BIN" <"$COMMAND_PIPE" > >(tee "$CONSOLE_LOG") 2>&1 &
+"$SERVER_BIN" "${SERVER_ARGUMENTS[@]}" <"$COMMAND_PIPE" > >(tee "$CONSOLE_LOG") 2>&1 &
 SERVER_PID=$!
 exec 3>"$COMMAND_PIPE"
 
@@ -146,8 +150,13 @@ if [ "$SERVER_READY" != "true" ]; then
   exit 1
 fi
 
-echo "Starting RWR game mode with script: $START_SCRIPT"
-printf 'start_script %s\n' "$START_SCRIPT" >&3
+if [ -n "$START_COMMAND" ]; then
+  echo "Starting RWR game mode with a custom console command."
+  printf '%s\n' "$START_COMMAND" >&3
+else
+  echo "Starting RWR game mode with script: $START_SCRIPT"
+  printf 'start_script %s\n' "$START_SCRIPT" >&3
+fi
 
 set +e
 wait "$SERVER_PID"

@@ -102,6 +102,7 @@ Goal: make failures obvious and container behavior predictable.
 - [x] Add useful startup diagnostics without exposing passwords
 - [x] Add optional install validation mode
 - [x] Add bounded retries for transient Steam network failures only
+- [x] Add managed vanilla Invasion mission autosave/load and final save during graceful shutdown
 
 Final live checks: pull the published image on Unraid, confirm a normal restart skips SteamCMD, confirm `VALIDATE_ON_START=true` completes successfully, and confirm Docker stop produces a clean RWR console shutdown.
 
@@ -288,3 +289,4 @@ Use this section for major milestones rather than every small commit.
 - Completed and live-validated Phase 2 configuration support, including the RWR username administrator allowlist.
 - Added verified install markers, incomplete-install detection, executable permission repair, optional validation, classified SteamCMD errors, transient-network retries, safe startup diagnostics, and graceful console shutdown for Phase 3.
 - Added unit and integration coverage for SteamCMD retry/auth behavior, install validation, marker safety, credential-free restarts, and graceful shutdown.
+- Added managed dedicated-Invasion metagame persistence using RWR's campaign serialization flow, five-minute autosaves, and a final save on graceful container shutdown.

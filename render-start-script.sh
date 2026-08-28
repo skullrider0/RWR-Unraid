@@ -12,6 +12,7 @@ MAX_PLAYERS="${MAX_PLAYERS:-32}"
 PUBLIC_SERVER="${PUBLIC_SERVER:-true}"
 FACTION="${FACTION:-0}"
 PERSISTENCY="${PERSISTENCY:-forever}"
+MISSION_PERSISTENCE="${MISSION_PERSISTENCE:-true}"
 
 validate_text() {
   local name="$1"
@@ -71,6 +72,15 @@ case "$PERSISTENCY" in
     ;;
 esac
 
+case "$MISSION_PERSISTENCE" in
+  true|1|yes) ENABLE_MISSION_PERSISTENCE=true ;;
+  false|0|no) ENABLE_MISSION_PERSISTENCE=false ;;
+  *)
+    echo "ERROR: MISSION_PERSISTENCE must be true or false."
+    exit 1
+    ;;
+esac
+
 if [ ! -f "$SOURCE_SCRIPT" ]; then
   echo "ERROR: RWR startup script not found: $SOURCE_SCRIPT"
   exit 1
@@ -90,6 +100,19 @@ sed -E -i \
   -e "s|max_players='[0-9]+'|max_players='$MAX_PLAYERS'|" \
   -e "s|<client_faction id='[0-9]+' */>|<client_faction id='$FACTION' />|" \
   "$TEMP_SCRIPT"
+
+if [ "$ENABLE_MISSION_PERSISTENCE" = "true" ]; then
+  sed -E -i \
+    -e '/#include "gamemode_invasion\.as"/a\#include "rwr_unraid_persistent_invasion.as"' \
+    -e 's/GameModeInvasion([[:space:]]+)metagame\(settings\);/RwrUnraidPersistentInvasion\1metagame(settings);/' \
+    "$TEMP_SCRIPT"
+
+  if ! grep -Fq '#include "rwr_unraid_persistent_invasion.as"' "$TEMP_SCRIPT" || \
+     ! grep -Eq 'RwrUnraidPersistentInvasion[[:space:]]+metagame\(settings\);' "$TEMP_SCRIPT"; then
+    echo "ERROR: Could not enable persistent RWR invasion saves."
+    exit 1
+  fi
+fi
 
 for expected_setting in \
   "server_name='$SERVER_NAME'" \

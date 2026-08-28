@@ -24,9 +24,24 @@ graceful_stop_rwr() {
     return 0
   fi
 
-  echo "Stopping RWR server through its console..."
+  echo "Saving profiles and stopping RWR through its console..."
+  printf 'save_profiles\n' >&"$command_fd" 2>/dev/null || true
   printf 'stop_server\n' >&"$command_fd" 2>/dev/null || true
-  if wait_for_process_exit "$process_id" "$shutdown_timeout"; then
+
+  local exit_delay=1
+  local remaining_timeout="$shutdown_timeout"
+  if [ "$shutdown_timeout" -gt "$exit_delay" ]; then
+    if wait_for_process_exit "$process_id" "$exit_delay"; then
+      echo "RWR server stopped cleanly."
+      return 0
+    fi
+    remaining_timeout=$((shutdown_timeout - exit_delay))
+  fi
+
+  # stop_server lets the invasion script run uninit(), whose managed save()
+  # persists mission state. exit then closes the surrounding RWR console.
+  printf 'exit\n' >&"$command_fd" 2>/dev/null || true
+  if wait_for_process_exit "$process_id" "$remaining_timeout"; then
     echo "RWR server stopped cleanly."
     return 0
   fi

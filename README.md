@@ -13,7 +13,8 @@ GitHub-ready Docker repository for a Running With Rifles dedicated server on Unr
 - Repairs executable permissions after SteamCMD changes
 - Automatically provisions default RWR `config.xml` and `settings.xml`
 - Automatically starts the vanilla invasion script after RWR finishes loading
-- Gracefully stops RWR through its console before escalating to process signals
+- Saves and restores vanilla Invasion mission progress
+- Gracefully saves and stops RWR through its console before escalating to process signals
 - Preserves existing configuration files and server data across container recreation/restarts
 
 ## Unraid
@@ -46,6 +47,7 @@ Environment variables:
 - `PUBLIC_SERVER` - `true` to register in the RWR server list; `false` for direct-connect only
 - `FACTION` - client faction: `0` greenbelts, `1` graycollars, or `2` brownpants
 - `PERSISTENCY` - profile persistence mode: `forever` (default) or `forever_and_match`
+- `MISSION_PERSISTENCE` - `true` (default) to autosave and restore vanilla Invasion mission progress
 - `ADMIN_NAMES` - optional comma-separated RWR usernames granted administrator access
 
 Use a dedicated Steam account that owns RWR rather than your primary account. Credentials are not required for an ordinary restart after a complete installation has been verified, but they are required whenever SteamCMD must install, update, validate, or repair the game.
@@ -65,7 +67,7 @@ If a marked installation is incomplete, the marker is removed and SteamCMD runs 
 
 SteamCMD retries transient connection failures according to `STEAMCMD_RETRIES`, but it does not repeatedly retry bad credentials, incomplete Steam Guard approval, missing game ownership, or a definite installation failure. Logs provide a targeted error without printing the configured password. Steam Guard approval can still be completed through the Steam Mobile app when SteamCMD requests it.
 
-When Unraid stops the container, the startup controller first sends `stop_server` to the RWR console and waits up to `SHUTDOWN_TIMEOUT` seconds. It then uses SIGTERM and finally SIGKILL only if RWR does not exit. The seven-second default plus its short signal fallback fits inside Docker's normal ten-second stop window.
+When Unraid stops the container, the startup controller sends `save_profiles`, `stop_server`, and then `exit` through the RWR console. Stopping the game mode runs its final managed mission save before the surrounding console exits. It waits up to `SHUTDOWN_TIMEOUT` seconds, then uses SIGTERM and finally SIGKILL only if RWR does not exit. The seven-second default plus its short signal fallback fits inside Docker's normal ten-second stop window.
 
 The bundled vanilla `start_invasion.as` script starts its game server on port `1240`. Publish both TCP and UDP port `1240` from the container. If players connect over the internet, forward port `1240` to the Unraid server in the router and allow it through any host firewall.
 
@@ -90,6 +92,10 @@ Set `ADMIN_NAMES` to a comma-separated list such as `playerone,player two`. The 
 ### Managed vanilla server settings
 
 When `START_SCRIPT=start_invasion.as`, the container copies the installed vanilla script to `rwr_unraid_start_invasion.as` and applies the verified Unraid settings above: name, comment, website URL, port, player limit, server-list visibility, client faction, and profile persistence. The original game-provided `start_invasion.as` is never modified. The managed copy is regenerated after updates and on every container start, so changes made through the template remain consistent.
+
+Vanilla dedicated Invasion leaves its metagame `save()` and `load()` methods empty. With `MISSION_PERSISTENCE=true`, the managed script uses RWR's campaign serialization flow for the map rotation, unlocks, special vehicles, item-delivery objectives, and user settings. RWR's existing Invasion autosaver invokes this about every five minutes, and the game mode saves once more during a graceful container stop. Data remains under `/serverdata/serverfiles/savegames` with the rest of the persistent server files. The save restores campaign/mission state; it is not a frame-perfect snapshot of every active soldier and projectile.
+
+Set `MISSION_PERSISTENCE=false` only when you intentionally want vanilla dedicated Invasion to start fresh. This setting applies to the managed `start_invasion.as` mode; custom game-mode scripts retain their own save behavior.
 
 If you change `SERVER_PORT`, update the TCP and UDP container mappings and router forwarding to the same port. Managed settings are intentionally skipped when `START_SCRIPT` points to a custom game-mode script because other scripts may use a different configuration structure.
 

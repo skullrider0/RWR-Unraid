@@ -10,9 +10,10 @@ source "$REPOSITORY_ROOT/runtime-utils.sh"
 
 mkfifo "$COMMAND_PIPE"
 (
-  if IFS= read -r command && [ "$command" = "stop_server" ]; then
-    printf '%s\n' "$command" > "$COMMAND_LOG"
-  fi
+  while IFS= read -r command; do
+    printf '%s\n' "$command" >> "$COMMAND_LOG"
+    [ "$command" = "exit" ] && exit 0
+  done
 ) < "$COMMAND_PIPE" &
 FAKE_SERVER_PID=$!
 exec {COMMAND_FD}> "$COMMAND_PIPE"
@@ -20,6 +21,8 @@ exec {COMMAND_FD}> "$COMMAND_PIPE"
 graceful_stop_rwr "$FAKE_SERVER_PID" "$COMMAND_FD" 2 >/dev/null
 exec {COMMAND_FD}>&-
 wait "$FAKE_SERVER_PID"
-grep -Fxq 'stop_server' "$COMMAND_LOG"
+diff -u \
+  <(printf '%s\n' save_profiles stop_server exit) \
+  "$COMMAND_LOG"
 
 echo "RWR graceful-shutdown tests passed."

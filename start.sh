@@ -1,23 +1,74 @@
 #!/bin/bash
-set -e
-STEAMCMD="/opt/steamcmd/steamcmd.sh"
-STEAMCMDDIR="/opt/steamcmd"
-SERVERDIR="/serverdata/serverfiles"
-DEFAULTSDIR="/opt/rwr-defaults"
+set -Eeuo pipefail
+STEAMCMDDIR="${STEAMCMDDIR:-/opt/steamcmd}"
+STEAMCMD="${STEAMCMD:-$STEAMCMDDIR/steamcmd.sh}"
+SERVERDIR="${SERVERDIR:-/serverdata/serverfiles}"
+DEFAULTSDIR="${DEFAULTSDIR:-/opt/rwr-defaults}"
+RWR_LIBDIR="${RWR_LIBDIR:-/usr/local/lib/rwr}"
+ADMIN_RENDERER="${ADMIN_RENDERER:-/usr/local/bin/rwr-render-admins}"
+START_SCRIPT_RENDERER="${START_SCRIPT_RENDERER:-/usr/local/bin/rwr-render-start-script}"
 MARKER="$SERVERDIR/.rwr-installed"
-source /usr/local/lib/rwr/start-options.sh
+source "$RWR_LIBDIR/start-options.sh"
+source "$RWR_LIBDIR/install-utils.sh"
+source "$RWR_LIBDIR/runtime-utils.sh"
 mkdir -p "$SERVERDIR"
 echo "=============================================="
 echo " Running With Rifles - Unraid Docker"
 echo "=============================================="
-if [ -z "${STEAM_USER:-}" ] || [ -z "${STEAM_PASS:-}" ]; then echo "ERROR: Set STEAM_USER and STEAM_PASS in the Unraid template."; exit 1; fi
+
+UPDATE_ON_START="${UPDATE_ON_START:-false}"
+VALIDATE_ON_START="${VALIDATE_ON_START:-false}"
+validate_boolean UPDATE_ON_START "$UPDATE_ON_START"
+validate_boolean VALIDATE_ON_START "$VALIDATE_ON_START"
+
+RUN_STEAMCMD=false
+STEAMCMD_VALIDATE=false
+INSTALL_REASON=""
+
 if [ ! -f "$MARKER" ]; then
-  echo "First launch: installing/updating RWR (AppID 270150)..."
-  "$STEAMCMD" +force_install_dir "$SERVERDIR" +login "$STEAM_USER" "$STEAM_PASS" +app_update 270150 validate +quit
-  touch "$MARKER"
-elif [ "${UPDATE_ON_START:-false}" = "true" ]; then
-  echo "Startup update requested..."
-  "$STEAMCMD" +force_install_dir "$SERVERDIR" +login "$STEAM_USER" "$STEAM_PASS" +app_update 270150 +quit
+  if validate_rwr_install "$SERVERDIR" >/dev/null 2>&1; then
+    echo "Found a complete existing RWR installation without a marker."
+    write_install_marker "$MARKER"
+  else
+    RUN_STEAMCMD=true
+    STEAMCMD_VALIDATE=true
+    INSTALL_REASON="First launch: installing and validating RWR"
+  fi
+elif ! validate_rwr_install "$SERVERDIR"; then
+  echo "WARNING: The marked RWR installation is incomplete or corrupted; requesting a repair validation."
+  rm -f "$MARKER"
+  RUN_STEAMCMD=true
+  STEAMCMD_VALIDATE=true
+  INSTALL_REASON="Repairing and validating RWR"
+elif is_true "$VALIDATE_ON_START"; then
+  RUN_STEAMCMD=true
+  STEAMCMD_VALIDATE=true
+  INSTALL_REASON="Startup install validation requested"
+elif is_true "$UPDATE_ON_START"; then
+  RUN_STEAMCMD=true
+  INSTALL_REASON="Startup update requested"
+fi
+
+if [ "$RUN_STEAMCMD" = "true" ]; then
+  if [ -z "${STEAM_USER:-}" ] || [ -z "${STEAM_PASS:-}" ]; then
+    echo "ERROR: $INSTALL_REASON, but Steam credentials are missing."
+    echo "Set STEAM_USER and STEAM_PASS in the Unraid template, then restart the container."
+    exit 1
+  fi
+
+  echo "$INSTALL_REASON (AppID $RWR_APP_ID)..."
+  echo "Steam Guard may request approval through the Steam Mobile app."
+  rm -f "$MARKER"
+  run_steamcmd_update "$STEAMCMD" "$SERVERDIR" "$STEAMCMD_VALIDATE"
+
+  if ! validate_rwr_install "$SERVERDIR"; then
+    echo "ERROR: SteamCMD finished, but the RWR installation did not pass verification."
+    exit 1
+  fi
+  write_install_marker "$MARKER"
+  echo "RWR installation verified successfully."
+else
+  echo "RWR installation verified; SteamCMD update skipped."
 fi
 
 for config_file in config.xml settings.xml; do
@@ -27,7 +78,7 @@ for config_file in config.xml settings.xml; do
   fi
 done
 
-/usr/local/bin/rwr-render-admins "$SERVERDIR/admins.xml"
+"$ADMIN_RENDERER" "$SERVERDIR/admins.xml"
 
 STEAMCLIENT="$STEAMCMDDIR/linux32/steamclient.so"
 if [ ! -f "$STEAMCLIENT" ]; then
@@ -41,13 +92,11 @@ fi
 mkdir -p "$HOME/.steam/sdk32"
 ln -sf "$STEAMCLIENT" "$HOME/.steam/sdk32/steamclient.so"
 
-SERVER_BIN=""
-for candidate in "$SERVERDIR/launch_server" "$SERVERDIR/rwr_gameserver/launch_server" "$SERVERDIR/rwr_server" "$SERVERDIR/rwr_gameserver/rwr_server"; do
-  if [ -x "$candidate" ]; then SERVER_BIN="$candidate"; break; fi
-done
-if [ -z "$SERVER_BIN" ]; then SERVER_BIN="$(find "$SERVERDIR" -maxdepth 4 -type f -name 'launch_server' -perm -111 2>/dev/null | head -n 1 || true)"; fi
-if [ -z "$SERVER_BIN" ]; then SERVER_BIN="$(find "$SERVERDIR" -maxdepth 4 -type f -name 'rwr_server' -perm -111 2>/dev/null | head -n 1 || true)"; fi
-if [ -z "$SERVER_BIN" ]; then echo "ERROR: Could not find the RWR server executable."; find "$SERVERDIR" -maxdepth 3 -type f | head -n 100; exit 1; fi
+SERVER_BIN="$(find_rwr_server_binary "$SERVERDIR" || true)"
+if [ -z "$SERVER_BIN" ]; then
+  echo "ERROR: Could not find the RWR server executable after installation verification."
+  exit 1
+fi
 echo "Launching RWR server with: $SERVER_BIN"
 cd "$(dirname "$SERVER_BIN")"
 
@@ -55,6 +104,7 @@ AUTO_START="${AUTO_START:-true}"
 START_SCRIPT="${START_SCRIPT:-start_invasion.as}"
 START_COMMAND="${START_COMMAND:-}"
 STARTUP_TIMEOUT="${STARTUP_TIMEOUT:-180}"
+SHUTDOWN_TIMEOUT="${SHUTDOWN_TIMEOUT:-20}"
 MANAGE_SERVER_SETTINGS="${MANAGE_SERVER_SETTINGS:-true}"
 parse_server_arguments "${SERVER_ARGS:-}"
 validate_start_command "$START_COMMAND"
@@ -82,13 +132,20 @@ if ! [[ "$STARTUP_TIMEOUT" =~ ^[1-9][0-9]*$ ]]; then
   echo "ERROR: STARTUP_TIMEOUT must be a positive number of seconds."
   exit 1
 fi
+if ! [[ "$SHUTDOWN_TIMEOUT" =~ ^[1-9][0-9]*$ ]]; then
+  echo "ERROR: SHUTDOWN_TIMEOUT must be a positive number of seconds."
+  exit 1
+fi
+
+echo "Startup diagnostics: update=$UPDATE_ON_START validate=$VALIDATE_ON_START auto_start=$AUTO_START"
+echo "Startup diagnostics: server_arguments=${#SERVER_ARGUMENTS[@]} startup_timeout=${STARTUP_TIMEOUT}s shutdown_timeout=${SHUTDOWN_TIMEOUT}s"
 
 case "$MANAGE_SERVER_SETTINGS" in
   true|1|yes)
     if [ "$START_SCRIPT" = "start_invasion.as" ]; then
       SOURCE_START_SCRIPT="$SERVERDIR/media/packages/vanilla/scripts/start_invasion.as"
       MANAGED_START_SCRIPT="$SERVERDIR/media/packages/vanilla/scripts/rwr_unraid_start_invasion.as"
-      /usr/local/bin/rwr-render-start-script "$SOURCE_START_SCRIPT" "$MANAGED_START_SCRIPT"
+      "$START_SCRIPT_RENDERER" "$SOURCE_START_SCRIPT" "$MANAGED_START_SCRIPT"
       START_SCRIPT="$(basename "$MANAGED_START_SCRIPT")"
       echo "Configured managed RWR startup script: $START_SCRIPT"
     else
@@ -106,6 +163,7 @@ RUNTIME_DIR="$(mktemp -d)"
 COMMAND_PIPE="$RUNTIME_DIR/rwr-commands"
 CONSOLE_LOG="$RUNTIME_DIR/rwr-console.log"
 SERVER_PID=""
+SHUTDOWN_REQUESTED=false
 mkfifo "$COMMAND_PIPE"
 touch "$CONSOLE_LOG"
 
@@ -115,10 +173,12 @@ cleanup() {
 }
 
 forward_shutdown() {
-  echo "Stopping RWR server..."
-  printf 'stop_server\n' >&3 2>/dev/null || true
-  if [ -n "$SERVER_PID" ] && kill -0 "$SERVER_PID" 2>/dev/null; then
-    kill -TERM "$SERVER_PID" 2>/dev/null || true
+  if [ "$SHUTDOWN_REQUESTED" = "true" ]; then
+    return
+  fi
+  SHUTDOWN_REQUESTED=true
+  if [ -n "$SERVER_PID" ]; then
+    graceful_stop_rwr "$SERVER_PID" 3 "$SHUTDOWN_TIMEOUT"
   fi
 }
 
@@ -164,4 +224,7 @@ set +e
 wait "$SERVER_PID"
 SERVER_STATUS=$?
 set -e
+if [ "$SHUTDOWN_REQUESTED" = "true" ]; then
+  exit 0
+fi
 exit "$SERVER_STATUS"

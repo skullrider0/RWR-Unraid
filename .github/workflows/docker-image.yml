@@ -24,10 +24,13 @@ jobs:
 
       - name: Validate shell scripts
         run: |
-          bash -n start.sh start-options.sh render-start-script.sh render-admins.sh tests/test-render-start-script.sh tests/test-render-admins.sh tests/test-start-options.sh
+          bash -n start.sh start-options.sh install-utils.sh runtime-utils.sh render-start-script.sh render-admins.sh tests/test-render-start-script.sh tests/test-render-admins.sh tests/test-start-options.sh tests/test-install-utils.sh tests/test-runtime-utils.sh tests/test-startup-reliability.sh
           bash tests/test-render-start-script.sh
           bash tests/test-render-admins.sh
           bash tests/test-start-options.sh
+          bash tests/test-install-utils.sh
+          bash tests/test-runtime-utils.sh
+          bash tests/test-startup-reliability.sh
 
       - name: Validate Unraid template XML
         run: python3 -c 'import xml.etree.ElementTree as ET; ET.parse("templates/RunningWithRifles.xml")'

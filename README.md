@@ -8,8 +8,12 @@ GitHub-ready Docker repository for a Running With Rifles dedicated server on Unr
 - Persistent `/serverdata`
 - Steam credentials configured in the Unraid template
 - Optional update on container startup
+- Optional SteamCMD validation/repair mode with transient-network retries
+- Verifies required RWR files before trusting the persistent install marker
+- Repairs executable permissions after SteamCMD changes
 - Automatically provisions default RWR `config.xml` and `settings.xml`
 - Automatically starts the vanilla invasion script after RWR finishes loading
+- Gracefully stops RWR through its console before escalating to process signals
 - Preserves existing configuration files and server data across container recreation/restarts
 
 ## Unraid
@@ -22,14 +26,18 @@ If your pool has another name, replace `cache` with that pool name. Do not use `
 
 Environment variables:
 
-- `STEAM_USER` - Steam account username
-- `STEAM_PASS` - Steam account password
+- `STEAM_USER` - Steam account username; required for first install, update, or validation
+- `STEAM_PASS` - Steam account password; required for first install, update, or validation
 - `UPDATE_ON_START` - `false` normally; `true` to update before startup
+- `VALIDATE_ON_START` - `false` normally; `true` to run SteamCMD validation/repair before startup
+- `STEAMCMD_RETRIES` - transient Steam network retries; defaults to `1`, allowed range `0` through `5`
+- `STEAMCMD_RETRY_DELAY` - delay between transient retries in seconds; defaults to `10`
 - `AUTO_START` - `true` to start a game mode when the RWR console is ready
 - `START_SCRIPT` - game-mode script; defaults to `start_invasion.as`
 - `START_COMMAND` - optional advanced RWR console command used instead of `start_script`; blank by default
 - `SERVER_ARGS` - optional whitespace-separated arguments passed directly to the RWR executable
 - `STARTUP_TIMEOUT` - optional console-readiness timeout in seconds; defaults to `180`
+- `SHUTDOWN_TIMEOUT` - seconds allowed for console shutdown before SIGTERM; defaults to `20`
 - `SERVER_NAME` - public/direct-connect server name; defaults to `MyInvasion`
 - `SERVER_COMMENT` - short server-list description; defaults to `Coop campaign`
 - `SERVER_URL` - optional server website URL; blank by default
@@ -40,7 +48,7 @@ Environment variables:
 - `PERSISTENCY` - profile persistence mode: `forever` (default) or `forever_and_match`
 - `ADMIN_NAMES` - optional comma-separated RWR usernames granted administrator access
 
-Use a dedicated Steam account that owns RWR rather than your primary account.
+Use a dedicated Steam account that owns RWR rather than your primary account. Credentials are not required for an ordinary restart after a complete installation has been verified, but they are required whenever SteamCMD must install, update, validate, or repair the game.
 
 On startup, missing configuration files are copied to:
 
@@ -48,6 +56,16 @@ On startup, missing configuration files are copied to:
 - `/serverdata/serverfiles/settings.xml`
 
 Existing files at those paths are never overwritten. The default settings select the vanilla lobby map required for the server to initialize.
+
+### Installation verification and recovery
+
+The container verifies the RWR server binary, vanilla package configuration, lobby map configuration, and invasion startup script before launching. It also repairs missing execute permissions on `launch_server` and `rwr_server`. The persistent marker `/serverdata/serverfiles/.rwr-installed` is created only after these checks succeed.
+
+If a marked installation is incomplete, the marker is removed and SteamCMD runs a repair validation. Set `VALIDATE_ON_START=true` to request that validation on every start; leave it `false` for faster normal restarts. `UPDATE_ON_START=true` requests a normal update without forcing a full file validation.
+
+SteamCMD retries transient connection failures according to `STEAMCMD_RETRIES`, but it does not repeatedly retry bad credentials, incomplete Steam Guard approval, missing game ownership, or a definite installation failure. Logs provide a targeted error without printing the configured password. Steam Guard approval can still be completed through the Steam Mobile app when SteamCMD requests it.
+
+When Unraid stops the container, the startup controller first sends `stop_server` to the RWR console and waits up to `SHUTDOWN_TIMEOUT` seconds. It then uses SIGTERM and finally SIGKILL only if RWR does not exit.
 
 The bundled vanilla `start_invasion.as` script starts its game server on port `1240`. Publish both TCP and UDP port `1240` from the container. If players connect over the internet, forward port `1240` to the Unraid server in the router and allow it through any host firewall.
 

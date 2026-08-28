@@ -88,18 +88,22 @@ Phase 2 completed on August 28, 2026. The final implementation uses the game-pro
 
 # Phase 3 — Startup and Reliability Improvements
 
+**Status: FINAL UNRAID VALIDATION**
+
 Goal: make failures obvious and container behavior predictable.
 
-- [ ] Improve SteamCMD error reporting
-- [ ] Handle Steam Guard / authentication failures clearly
-- [ ] Detect incomplete or corrupted installs
-- [ ] Avoid creating `.rwr-installed` unless installation really succeeded
-- [ ] Verify executable permissions after SteamCMD updates
-- [ ] Add graceful SIGTERM/shutdown handling if RWR requires it
+- [x] Improve SteamCMD error reporting
+- [x] Handle Steam Guard / authentication failures clearly
+- [x] Detect incomplete or corrupted installs
+- [x] Avoid creating `.rwr-installed` unless installation really succeeded
+- [x] Verify executable permissions after SteamCMD updates
+- [x] Add graceful RWR console shutdown with SIGTERM/SIGKILL fallback
 - [x] Improve server executable detection using verified RWR install paths
-- [ ] Add useful startup diagnostics without exposing passwords
-- [ ] Add optional install validation mode
-- [ ] Determine whether automatic retry behavior is useful for transient Steam failures
+- [x] Add useful startup diagnostics without exposing passwords
+- [x] Add optional install validation mode
+- [x] Add bounded retries for transient Steam network failures only
+
+Final live checks: pull the published image on Unraid, confirm a normal restart skips SteamCMD, confirm `VALIDATE_ON_START=true` completes successfully, and confirm Docker stop produces a clean RWR console shutdown.
 
 ### Security rule
 
@@ -278,3 +282,9 @@ Use this section for major milestones rather than every small commit.
 - Added managed vanilla invasion settings for server name, port, player limit, public visibility, and client faction without modifying the installed upstream script.
 - Added CI validation for shell syntax, managed-script rendering, and Unraid template XML.
 - Completed Phase 1 after a credentialed `UPDATE_ON_START=true` run successfully checked AppID `270150`, regenerated the managed invasion script, and returned the server to a fully loaded state.
+
+### 2026-08-28
+
+- Completed and live-validated Phase 2 configuration support, including the RWR username administrator allowlist.
+- Added verified install markers, incomplete-install detection, executable permission repair, optional validation, classified SteamCMD errors, transient-network retries, safe startup diagnostics, and graceful console shutdown for Phase 3.
+- Added unit and integration coverage for SteamCMD retry/auth behavior, install validation, marker safety, credential-free restarts, and graceful shutdown.

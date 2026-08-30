@@ -103,6 +103,7 @@ Goal: make failures obvious and container behavior predictable.
 - [x] Add optional install validation mode
 - [x] Add bounded retries for transient Steam network failures only
 - [x] Add managed vanilla Invasion mission autosave/load and final save during graceful shutdown
+- [x] Add managed post-victory player map voting for unfinished Invasion maps
 
 Final live checks: pull the published image on Unraid, confirm a normal restart skips SteamCMD, confirm `VALIDATE_ON_START=true` completes successfully, and confirm Docker stop produces a clean RWR console shutdown.
 
@@ -294,3 +295,4 @@ Use this section for major milestones rather than every small commit.
 ### 2026-08-30
 
 - Fixed first-run mission persistence so RWR's empty saved-data response initializes a fresh Invasion rotation instead of dereferencing a null XML child.
+- Added a 30-second post-victory map ballot with `/vote 1`, `/vote 2`, `/vote 3`, `/maps`, and the existing administrator `/warp` override.

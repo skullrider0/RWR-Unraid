@@ -14,6 +14,7 @@ GitHub-ready Docker repository for a Running With Rifles dedicated server on Unr
 - Automatically provisions default RWR `config.xml` and `settings.xml`
 - Automatically starts the vanilla invasion script after RWR finishes loading
 - Saves and restores vanilla Invasion mission progress
+- Lets players vote for the next unfinished Invasion map after each victory
 - Gracefully saves and stops RWR through its console before escalating to process signals
 - Preserves existing configuration files and server data across container recreation/restarts
 
@@ -48,6 +49,7 @@ Environment variables:
 - `FACTION` - client faction: `0` greenbelts, `1` graycollars, or `2` brownpants
 - `PERSISTENCY` - profile persistence mode: `forever` (default) or `forever_and_match`
 - `MISSION_PERSISTENCE` - `true` (default) to autosave and restore vanilla Invasion mission progress
+- `MAP_VOTING` - `true` (default) to enable a 30-second player vote for the next unfinished Invasion map
 - `ADMIN_NAMES` - optional comma-separated RWR usernames granted administrator access
 
 Use a dedicated Steam account that owns RWR rather than your primary account. Credentials are not required for an ordinary restart after a complete installation has been verified, but they are required whenever SteamCMD must install, update, validate, or repair the game.
@@ -96,6 +98,10 @@ When `START_SCRIPT=start_invasion.as`, the container copies the installed vanill
 Vanilla dedicated Invasion leaves its metagame `save()` and `load()` methods empty. With `MISSION_PERSISTENCE=true`, the managed script uses RWR's campaign serialization flow for the map rotation, unlocks, special vehicles, item-delivery objectives, and user settings. RWR's existing Invasion autosaver invokes this about every five minutes, and the game mode saves once more during a graceful container stop. Data remains under `/serverdata/serverfiles/savegames` with the rest of the persistent server files. The save restores campaign/mission state; it is not a frame-perfect snapshot of every active soldier and projectile.
 
 Set `MISSION_PERSISTENCE=false` only when you intentionally want vanilla dedicated Invasion to start fresh. This setting applies to the managed `start_invasion.as` mode; custom game-mode scripts retain their own save behavior.
+
+With `MAP_VOTING=true`, each successful map opens a 30-second ballot containing up to three unfinished maps. Players use `/vote 1`, `/vote 2`, or `/vote 3`; `/maps` repeats the available choices privately. A player may change their vote before the timer ends. The highest total wins, ties prefer the earlier listed option, and option 1 is selected when nobody votes. An administrator or moderator can still use RWR's `/warp <index>` command to override an active vote.
+
+Map voting applies only to the managed vanilla `start_invasion.as` mode. Set `MAP_VOTING=false` to restore the normal Invasion map-selection behavior.
 
 If you change `SERVER_PORT`, update the TCP and UDP container mappings and router forwarding to the same port. Managed settings are intentionally skipped when `START_SCRIPT` points to a custom game-mode script because other scripts may use a different configuration structure.
 

@@ -11,6 +11,7 @@ COPY --chown=steam:steam start-options.sh /usr/local/lib/rwr/start-options.sh
 COPY --chown=steam:steam install-utils.sh /usr/local/lib/rwr/install-utils.sh
 COPY --chown=steam:steam runtime-utils.sh /usr/local/lib/rwr/runtime-utils.sh
 COPY --chown=steam:steam rwr-unraid-persistent-invasion.as /usr/local/share/rwr/rwr-unraid-persistent-invasion.as
+COPY --chown=steam:steam rwr-unraid-map-vote.as /usr/local/share/rwr/rwr-unraid-map-vote.as
 COPY --chown=steam:steam render-start-script.sh /usr/local/bin/rwr-render-start-script
 COPY --chown=steam:steam render-admins.sh /usr/local/bin/rwr-render-admins
 RUN chmod +x /start.sh /usr/local/bin/rwr-render-start-script /usr/local/bin/rwr-render-admins

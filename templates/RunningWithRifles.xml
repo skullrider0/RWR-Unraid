@@ -3,14 +3,14 @@
   <Name>RunningWithRifles</Name>
   <Beta>False</Beta>
   <Category>GameServers:</Category>
-  <Date>2026-08-28</Date>
+  <Date>2026-08-30</Date>
   <Repository>ghcr.io/skullrider0/rwr-unraid:latest</Repository>
   <Registry>https://ghcr.io/</Registry>
   <Network>bridge</Network>
   <Privileged>false</Privileged>
   <Support>https://github.com/skullrider0/RWR-Unraid/issues</Support>
   <Project>https://runningwithrifles.com/</Project>
-  <Overview>Running With Rifles dedicated server for Unraid. Uses SteamCMD to install/update AppID 270150, automatically starts vanilla invasion, and persists profiles and mission progress. A direct cache-pool path is required because RWR's older resource loader is incompatible with the /mnt/user FUSE path.</Overview>
+  <Overview>Running With Rifles dedicated server for Unraid. Uses SteamCMD to install/update AppID 270150, automatically starts vanilla invasion, persists profiles and mission progress, and offers post-match player map voting. A direct cache-pool path is required because RWR's older resource loader is incompatible with the /mnt/user FUSE path.</Overview>
   <WebUI></WebUI>
   <TemplateURL>https://raw.githubusercontent.com/skullrider0/RWR-Unraid/main/templates/RunningWithRifles.xml</TemplateURL>
   <Shell>bash</Shell>
@@ -35,6 +35,7 @@
   <Config Name="Player Faction" Target="FACTION" Default="0" Mode="" Description="Client faction for vanilla invasion: 0 greenbelts, 1 graycollars, or 2 brownpants." Type="Variable" Display="always" Required="true" Mask="false">0</Config>
   <Config Name="Profile Persistence" Target="PERSISTENCY" Default="forever" Mode="" Description="RWR profile persistence mode: forever or forever_and_match." Type="Variable" Display="always" Required="true" Mask="false">forever</Config>
   <Config Name="Mission Progress Persistence" Target="MISSION_PERSISTENCE" Default="true" Mode="" Description="Save and restore vanilla Invasion mission progress. Saves automatically about every five minutes and during a graceful container restart." Type="Variable" Display="always" Required="true" Mask="false">true</Config>
+  <Config Name="Post-Match Map Voting" Target="MAP_VOTING" Default="true" Mode="" Description="After a successful vanilla Invasion map, offer up to three unfinished maps for 30 seconds. Players vote with /vote 1, /vote 2, or /vote 3." Type="Variable" Display="always" Required="true" Mask="false">true</Config>
   <Config Name="Admin Usernames" Target="ADMIN_NAMES" Default="" Mode="" Description="Optional comma-separated RWR player usernames granted administrator access. Names are converted to lowercase and written to admins.xml." Type="Variable" Display="always" Required="false" Mask="false"></Config>
   <Config Name="RWR TCP Port" Target="1240" Default="1240" Mode="tcp" Description="RWR server TCP port. The bundled vanilla start_invasion.as script listens on port 1240." Type="Port" Display="always" Required="true" Mask="false">1240</Config>
   <Config Name="RWR UDP Port" Target="1240" Default="1240" Mode="udp" Description="RWR server UDP port. The bundled vanilla start_invasion.as script listens on port 1240." Type="Port" Display="always" Required="true" Mask="false">1240</Config>

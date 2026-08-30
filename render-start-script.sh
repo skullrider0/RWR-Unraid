@@ -13,6 +13,7 @@ PUBLIC_SERVER="${PUBLIC_SERVER:-true}"
 FACTION="${FACTION:-0}"
 PERSISTENCY="${PERSISTENCY:-forever}"
 MISSION_PERSISTENCE="${MISSION_PERSISTENCE:-true}"
+MAP_VOTING="${MAP_VOTING:-true}"
 
 validate_text() {
   local name="$1"
@@ -81,6 +82,15 @@ case "$MISSION_PERSISTENCE" in
     ;;
 esac
 
+case "$MAP_VOTING" in
+  true|1|yes) ENABLE_MAP_VOTING=true ;;
+  false|0|no) ENABLE_MAP_VOTING=false ;;
+  *)
+    echo "ERROR: MAP_VOTING must be true or false."
+    exit 1
+    ;;
+esac
+
 if [ ! -f "$SOURCE_SCRIPT" ]; then
   echo "ERROR: RWR startup script not found: $SOURCE_SCRIPT"
   exit 1
@@ -101,17 +111,36 @@ sed -E -i \
   -e "s|<client_faction id='[0-9]+' */>|<client_faction id='$FACTION' />|" \
   "$TEMP_SCRIPT"
 
-if [ "$ENABLE_MISSION_PERSISTENCE" = "true" ]; then
+METAGAME_CLASS="GameModeInvasion"
+if [ "$ENABLE_MISSION_PERSISTENCE" = "true" ] || [ "$ENABLE_MAP_VOTING" = "true" ]; then
   sed -E -i \
     -e '/#include "gamemode_invasion\.as"/a\#include "rwr_unraid_persistent_invasion.as"' \
-    -e 's/GameModeInvasion([[:space:]]+)metagame\(settings\);/RwrUnraidPersistentInvasion\1metagame(settings);/' \
     "$TEMP_SCRIPT"
+fi
 
-  if ! grep -Fq '#include "rwr_unraid_persistent_invasion.as"' "$TEMP_SCRIPT" || \
-     ! grep -Eq 'RwrUnraidPersistentInvasion[[:space:]]+metagame\(settings\);' "$TEMP_SCRIPT"; then
-    echo "ERROR: Could not enable persistent RWR invasion saves."
-    exit 1
-  fi
+if [ "$ENABLE_MAP_VOTING" = "true" ]; then
+  sed -E -i \
+    -e '/#include "rwr_unraid_persistent_invasion\.as"/a\#include "rwr_unraid_map_vote.as"' \
+    "$TEMP_SCRIPT"
+fi
+
+if [ "$ENABLE_MISSION_PERSISTENCE" = "true" ] && [ "$ENABLE_MAP_VOTING" = "true" ]; then
+  METAGAME_CLASS="RwrUnraidPersistentMapVoteInvasion"
+elif [ "$ENABLE_MISSION_PERSISTENCE" = "true" ]; then
+  METAGAME_CLASS="RwrUnraidPersistentInvasion"
+elif [ "$ENABLE_MAP_VOTING" = "true" ]; then
+  METAGAME_CLASS="RwrUnraidMapVoteInvasion"
+fi
+
+if [ "$METAGAME_CLASS" != "GameModeInvasion" ]; then
+  sed -E -i \
+    -e "s/GameModeInvasion([[:space:]]+)metagame\(settings\);/${METAGAME_CLASS}\1metagame(settings);/" \
+    "$TEMP_SCRIPT"
+fi
+
+if ! grep -Eq "${METAGAME_CLASS}[[:space:]]+metagame\(settings\);" "$TEMP_SCRIPT"; then
+  echo "ERROR: Could not configure managed RWR Invasion features."
+  exit 1
 fi
 
 for expected_setting in \

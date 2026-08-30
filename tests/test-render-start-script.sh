@@ -48,7 +48,8 @@ grep -Fq "persistency='forever_and_match'" "$RENDERED_SCRIPT"
 grep -Fq "max_players='40'" "$RENDERED_SCRIPT"
 grep -Fq "<client_faction id='2' />" "$RENDERED_SCRIPT"
 grep -Fq '#include "rwr_unraid_persistent_invasion.as"' "$RENDERED_SCRIPT"
-grep -Eq 'RwrUnraidPersistentInvasion[[:space:]]+metagame\(settings\);' "$RENDERED_SCRIPT"
+grep -Fq '#include "rwr_unraid_map_vote.as"' "$RENDERED_SCRIPT"
+grep -Eq 'RwrUnraidPersistentMapVoteInvasion[[:space:]]+metagame\(settings\);' "$RENDERED_SCRIPT"
 
 PERSISTENCE_SOURCE="$REPOSITORY_ROOT/rwr-unraid-persistent-invasion.as"
 grep -Fq 'class RwrUnraidPersistentInvasion : GameModeInvasion' "$PERSISTENCE_SOURCE"
@@ -58,6 +59,13 @@ grep -Fq 'if (root !is null) {' "$PERSISTENCE_SOURCE"
 grep -Fq 'persistent invasion metagame not found; starting fresh' "$PERSISTENCE_SOURCE"
 grep -Fq 'm_mapRotator.save(root);' "$PERSISTENCE_SOURCE"
 grep -Fq 'm_mapRotator.load(root);' "$PERSISTENCE_SOURCE"
+
+MAP_VOTE_SOURCE="$REPOSITORY_ROOT/rwr-unraid-map-vote.as"
+grep -Fq 'class RwrUnraidMapVoteRotator : MapRotatorInvasion' "$MAP_VOTE_SOURCE"
+grep -Fq 'protected void readyToAdvance() override' "$MAP_VOTE_SOURCE"
+grep -Fq 'checkCommand(message, "vote")' "$MAP_VOTE_SOURCE"
+grep -Fq 'checkCommand(message, "maps")' "$MAP_VOTE_SOURCE"
+grep -Fq 'waitAndStart(0.0f, false);' "$MAP_VOTE_SOURCE"
 
 if [ "$SOURCE_CHECKSUM" != "$(sha256sum "$SOURCE_SCRIPT" | awk '{print $1}')" ]; then
   echo "Source RWR script was modified."
@@ -78,10 +86,27 @@ if PERSISTENCY=invalid \
   exit 1
 fi
 
+MAP_VOTING=false \
+  "$REPOSITORY_ROOT/render-start-script.sh" "$SOURCE_SCRIPT" "$TEST_DIRECTORY/persistence-only.as"
+grep -Fq '#include "rwr_unraid_persistent_invasion.as"' "$TEST_DIRECTORY/persistence-only.as"
+if grep -Fq 'rwr_unraid_map_vote.as' "$TEST_DIRECTORY/persistence-only.as" || \
+   ! grep -Eq 'RwrUnraidPersistentInvasion[[:space:]]+metagame\(settings\);' "$TEST_DIRECTORY/persistence-only.as"; then
+  echo "Persistence-only feature selection was rendered incorrectly."
+  exit 1
+fi
+
 MISSION_PERSISTENCE=false \
-  "$REPOSITORY_ROOT/render-start-script.sh" "$SOURCE_SCRIPT" "$TEST_DIRECTORY/nonpersistent.as"
-if grep -Fq 'rwr_unraid_persistent_invasion.as' "$TEST_DIRECTORY/nonpersistent.as"; then
-  echo "Mission persistence was enabled when explicitly disabled."
+  "$REPOSITORY_ROOT/render-start-script.sh" "$SOURCE_SCRIPT" "$TEST_DIRECTORY/voting-only.as"
+grep -Fq '#include "rwr_unraid_persistent_invasion.as"' "$TEST_DIRECTORY/voting-only.as"
+grep -Fq '#include "rwr_unraid_map_vote.as"' "$TEST_DIRECTORY/voting-only.as"
+grep -Eq 'RwrUnraidMapVoteInvasion[[:space:]]+metagame\(settings\);' "$TEST_DIRECTORY/voting-only.as"
+
+MISSION_PERSISTENCE=false MAP_VOTING=false \
+  "$REPOSITORY_ROOT/render-start-script.sh" "$SOURCE_SCRIPT" "$TEST_DIRECTORY/vanilla.as"
+if grep -Fq 'rwr_unraid_persistent_invasion.as' "$TEST_DIRECTORY/vanilla.as" || \
+   grep -Fq 'rwr_unraid_map_vote.as' "$TEST_DIRECTORY/vanilla.as" || \
+   ! grep -Eq 'GameModeInvasion[[:space:]]+metagame\(settings\);' "$TEST_DIRECTORY/vanilla.as"; then
+  echo "Vanilla feature selection was rendered incorrectly."
   exit 1
 fi
 
@@ -89,6 +114,13 @@ if MISSION_PERSISTENCE=invalid \
   "$REPOSITORY_ROOT/render-start-script.sh" "$SOURCE_SCRIPT" "$TEST_DIRECTORY/invalid-persistence.as" \
   >/dev/null 2>&1; then
   echo "Invalid MISSION_PERSISTENCE was accepted."
+  exit 1
+fi
+
+if MAP_VOTING=invalid \
+  "$REPOSITORY_ROOT/render-start-script.sh" "$SOURCE_SCRIPT" "$TEST_DIRECTORY/invalid-map-voting.as" \
+  >/dev/null 2>&1; then
+  echo "Invalid MAP_VOTING was accepted."
   exit 1
 fi
 

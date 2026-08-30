@@ -10,6 +10,7 @@
   <Privileged>false</Privileged>
   <Support>https://github.com/skullrider0/RWR-Unraid/issues</Support>
   <Project>https://runningwithrifles.com/</Project>
+  <Icon>https://shared.fastly.steamstatic.com/community_assets/images/apps/270150/feacad90f64b2db6c3f7ac6dafe62d21a1b3df55.jpg</Icon>
   <Overview>Running With Rifles dedicated server for Unraid. Uses SteamCMD to install/update AppID 270150, automatically starts vanilla invasion, persists profiles and mission progress, and offers post-match player map voting. A direct cache-pool path is required because RWR's older resource loader is incompatible with the /mnt/user FUSE path.</Overview>
   <WebUI></WebUI>
   <TemplateURL>https://raw.githubusercontent.com/skullrider0/RWR-Unraid/main/templates/RunningWithRifles.xml</TemplateURL>

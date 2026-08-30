@@ -1,4 +1,5 @@
 FROM debian:bookworm-slim
+LABEL net.unraid.docker.icon="https://shared.fastly.steamstatic.com/community_assets/images/apps/270150/feacad90f64b2db6c3f7ac6dafe62d21a1b3df55.jpg"
 ENV DEBIAN_FRONTEND=noninteractive STEAMCMDDIR=/opt/steamcmd SERVERDIR=/serverdata/serverfiles
 RUN dpkg --add-architecture i386 && apt-get update && apt-get install -y --no-install-recommends ca-certificates curl wget bash procps lib32gcc-s1 lib32stdc++6 libx11-6:i386 libxext6:i386 libxdmcp6:i386 libgl1:i386 libglu1-mesa:i386 libxrandr2:i386 libxinerama1:i386 libxcursor1:i386 libxi6:i386 libfreetype6:i386 libgpg-error0:i386 && rm -rf /var/lib/apt/lists/*
 RUN useradd -m -u 99 -U -s /bin/bash steam && mkdir -p /opt/steamcmd /serverdata/serverfiles && chown -R steam:steam /opt/steamcmd /serverdata

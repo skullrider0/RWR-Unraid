@@ -24,7 +24,7 @@ jobs:
 
       - name: Validate shell scripts
         run: |
-          bash -n start.sh start-options.sh install-utils.sh runtime-utils.sh render-start-script.sh render-admins.sh phase3-live-check.sh tests/test-render-start-script.sh tests/test-render-admins.sh tests/test-start-options.sh tests/test-install-utils.sh tests/test-runtime-utils.sh tests/test-startup-reliability.sh tests/test-phase3-live-check.sh
+          bash -n start.sh start-options.sh install-utils.sh runtime-utils.sh render-start-script.sh render-admins.sh phase3-live-check.sh tests/test-render-start-script.sh tests/test-render-admins.sh tests/test-start-options.sh tests/test-install-utils.sh tests/test-runtime-utils.sh tests/test-startup-reliability.sh tests/test-phase3-live-check.sh AGENT/bin/lab-agent AGENT/setup.sh
           bash tests/test-render-start-script.sh
           bash tests/test-render-admins.sh
           bash tests/test-start-options.sh
@@ -32,6 +32,9 @@ jobs:
           bash tests/test-runtime-utils.sh
           bash tests/test-startup-reliability.sh
           bash tests/test-phase3-live-check.sh
+
+      - name: Validate agent task schema
+        run: jq -e 'type == "object" and (.task_id|type=="string") and (.goal|type=="string") and (.steps|type=="array") and (.acceptance|type=="array")' AGENT/inbox/NEXT_TASK.json >/dev/null
 
       - name: Validate Unraid template XML
         run: python3 -c 'import xml.etree.ElementTree as ET; ET.parse("templates/RunningWithRifles.xml")'

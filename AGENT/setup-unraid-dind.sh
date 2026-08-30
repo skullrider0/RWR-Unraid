@@ -19,9 +19,13 @@ chmod 700 "$BASE_DIR/secrets"
 
 TOKEN_FILE="$BASE_DIR/secrets/github-token"
 if [[ ! -s "$TOKEN_FILE" ]]; then
-  printf 'GitHub fine-grained token for RWR-Unraid (Contents: Read and write): '
-  read -r -s token
-  printf '\n'
+  if [[ ! -r /dev/tty ]]; then
+    echo "An interactive terminal is required to enter the GitHub token." >&2
+    exit 1
+  fi
+  printf 'GitHub fine-grained token for RWR-Unraid (Contents: Read and write): ' > /dev/tty
+  IFS= read -r -s token < /dev/tty
+  printf '\n' > /dev/tty
   if [[ -z "$token" ]]; then
     echo "A GitHub token is required so the agent can push result commits." >&2
     exit 1

@@ -290,3 +290,7 @@ Use this section for major milestones rather than every small commit.
 - Added verified install markers, incomplete-install detection, executable permission repair, optional validation, classified SteamCMD errors, transient-network retries, safe startup diagnostics, and graceful console shutdown for Phase 3.
 - Added unit and integration coverage for SteamCMD retry/auth behavior, install validation, marker safety, credential-free restarts, and graceful shutdown.
 - Added managed dedicated-Invasion metagame persistence using RWR's campaign serialization flow, five-minute autosaves, and a final save on graceful container shutdown.
+
+### 2026-08-30
+
+- Fixed first-run mission persistence so RWR's empty saved-data response initializes a fresh Invasion rotation instead of dereferencing a null XML child.

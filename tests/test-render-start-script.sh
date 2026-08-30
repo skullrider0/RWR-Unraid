@@ -54,6 +54,8 @@ PERSISTENCE_SOURCE="$REPOSITORY_ROOT/rwr-unraid-persistent-invasion.as"
 grep -Fq 'class RwrUnraidPersistentInvasion : GameModeInvasion' "$PERSISTENCE_SOURCE"
 grep -Fq 'settings.m_continue = true;' "$PERSISTENCE_SOURCE"
 grep -Fq 'commandRoot.setStringAttribute("class", "save_data");' "$PERSISTENCE_SOURCE"
+grep -Fq 'if (root !is null) {' "$PERSISTENCE_SOURCE"
+grep -Fq 'persistent invasion metagame not found; starting fresh' "$PERSISTENCE_SOURCE"
 grep -Fq 'm_mapRotator.save(root);' "$PERSISTENCE_SOURCE"
 grep -Fq 'm_mapRotator.load(root);' "$PERSISTENCE_SOURCE"
 

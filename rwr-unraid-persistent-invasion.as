@@ -49,49 +49,54 @@ class RwrUnraidPersistentInvasion : GameModeInvasion {
 
 		if (doc !is null) {
 			const XmlElement@ root = doc.getFirstChild();
-			const XmlElement@ settings = root.getFirstElementByTagName("settings");
-			if (settings !is null) {
-				m_userSettings.fromXmlElement(settings);
-				m_userSettings.m_continue = true;
+			if (root !is null) {
+				const XmlElement@ settings = root.getFirstElementByTagName("settings");
+				if (settings !is null) {
+					m_userSettings.fromXmlElement(settings);
+					m_userSettings.m_continue = true;
 
-				XmlElement@ command = getUserSettings().toXmlElement("command");
-				command.setStringAttribute("class", "set_game_settings_menu");
-				getComms().send(command);
-			}
+					XmlElement@ command = getUserSettings().toXmlElement("command");
+					command.setStringAttribute("class", "set_game_settings_menu");
+					getComms().send(command);
+				}
 
-			m_userSettings.print();
-			m_mapRotator.init();
-			m_mapRotator.load(root);
-			m_unlockManager.init(0);
-			m_unlockManager.load(root);
+				m_userSettings.print();
+				m_mapRotator.init();
+				m_mapRotator.load(root);
+				m_unlockManager.init(0);
+				m_unlockManager.load(root);
 
-			if (m_specialCrateManager !is null) {
-				m_specialCrateManager.init();
-				m_specialCrateManager.load(root);
-			}
-			if (m_specialCargoVehicleManager !is null) {
-				m_specialCargoVehicleManager.init();
-				m_specialCargoVehicleManager.load(root);
-			}
-			if (m_itemDeliveryOrganizer !is null) {
-				m_itemDeliveryOrganizer.init();
-				m_itemDeliveryOrganizer.load(root);
-			}
+				if (m_specialCrateManager !is null) {
+					m_specialCrateManager.init();
+					m_specialCrateManager.load(root);
+				}
+				if (m_specialCargoVehicleManager !is null) {
+					m_specialCargoVehicleManager.init();
+					m_specialCargoVehicleManager.load(root);
+				}
+				if (m_itemDeliveryOrganizer !is null) {
+					m_itemDeliveryOrganizer.init();
+					m_itemDeliveryOrganizer.load(root);
+				}
 
-			_log("persistent invasion metagame loaded", 1);
-		} else {
-			_log("persistent invasion metagame not found; starting fresh");
-			m_mapRotator.init();
-			m_unlockManager.init(0);
-			if (m_specialCrateManager !is null) {
-				m_specialCrateManager.init();
+				_log("persistent invasion metagame loaded", 1);
+				return;
 			}
-			if (m_specialCargoVehicleManager !is null) {
-				m_specialCargoVehicleManager.init();
-			}
-			if (m_itemDeliveryOrganizer !is null) {
-				m_itemDeliveryOrganizer.init();
-			}
+		}
+
+		// RWR returns an empty document before the first save exists. Treat it
+		// the same as a null response and initialize a new Invasion rotation.
+		_log("persistent invasion metagame not found; starting fresh");
+		m_mapRotator.init();
+		m_unlockManager.init(0);
+		if (m_specialCrateManager !is null) {
+			m_specialCrateManager.init();
+		}
+		if (m_specialCargoVehicleManager !is null) {
+			m_specialCargoVehicleManager.init();
+		}
+		if (m_itemDeliveryOrganizer !is null) {
+			m_itemDeliveryOrganizer.init();
 		}
 	}
 }

@@ -1,0 +1,213 @@
+#!/usr/bin/env bash
+set -u
+
+REPO_DIR="${RWR_AGENT_REPO:-/opt/rwr-unraid}"
+TASK_BRANCH="${RWR_AGENT_BRANCH:-agent/tasks}"
+AGENT_DIR="$REPO_DIR/AGENT"
+INBOX="$AGENT_DIR/inbox/NEXT_TASK.json"
+OUTBOX="$AGENT_DIR/outbox"
+STATE_DIR="$AGENT_DIR/state"
+HISTORY_DIR="$AGENT_DIR/history/tasks"
+COMPLETED="$STATE_DIR/completed_tasks.txt"
+LOCK_FILE="${RWR_AGENT_LOCK:-/tmp/rwr-lab-agent.lock}"
+MAX_DEFAULT_ATTEMPTS="${RWR_AGENT_MAX_ATTEMPTS:-5}"
+
+mkdir -p "$OUTBOX" "$STATE_DIR" "$HISTORY_DIR"
+touch "$COMPLETED"
+
+exec 9>"$LOCK_FILE"
+if ! flock -n 9; then
+  exit 0
+fi
+
+log() {
+  printf '[rwr-agent] %s\n' "$*"
+}
+
+require_cmd() {
+  command -v "$1" >/dev/null 2>&1 || {
+    log "missing required command: $1"
+    exit 2
+  }
+}
+
+for cmd in git jq bash flock date hostname; do
+  require_cmd "$cmd"
+done
+
+if [[ ! -d "$REPO_DIR/.git" ]]; then
+  log "repository not found at $REPO_DIR"
+  exit 2
+fi
+
+cd "$REPO_DIR"
+
+git fetch origin "$TASK_BRANCH" --quiet || {
+  log "unable to fetch origin/$TASK_BRANCH"
+  exit 3
+}
+
+current_branch="$(git branch --show-current)"
+if [[ "$current_branch" != "$TASK_BRANCH" ]]; then
+  if git show-ref --verify --quiet "refs/heads/$TASK_BRANCH"; then
+    git checkout "$TASK_BRANCH" --quiet || exit 3
+  else
+    git checkout -b "$TASK_BRANCH" "origin/$TASK_BRANCH" --quiet || exit 3
+  fi
+fi
+
+git reset --hard "origin/$TASK_BRANCH" --quiet || exit 3
+
+if [[ ! -f "$INBOX" ]]; then
+  log "no task file"
+  exit 0
+fi
+
+if ! jq -e 'type == "object" and (.task_id|type=="string") and (.goal|type=="string") and (.steps|type=="array") and (.acceptance|type=="array")' "$INBOX" >/dev/null; then
+  log "invalid task schema"
+  exit 4
+fi
+
+task_id="$(jq -r '.task_id' "$INBOX")"
+goal="$(jq -r '.goal' "$INBOX")"
+requested_attempts="$(jq -r '.max_attempts // 1' "$INBOX")"
+
+if [[ ! "$task_id" =~ ^[A-Za-z0-9._-]+$ ]]; then
+  log "invalid task_id"
+  exit 4
+fi
+
+if grep -Fxq "$task_id" "$COMPLETED"; then
+  log "task $task_id already processed"
+  exit 0
+fi
+
+if ! [[ "$requested_attempts" =~ ^[0-9]+$ ]]; then
+  requested_attempts=1
+fi
+if (( requested_attempts < 1 )); then requested_attempts=1; fi
+if (( requested_attempts > MAX_DEFAULT_ATTEMPTS )); then requested_attempts="$MAX_DEFAULT_ATTEMPTS"; fi
+
+started_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+history="$HISTORY_DIR/$task_id"
+mkdir -p "$history"
+output_file="$OUTBOX/LAST_OUTPUT.txt"
+: > "$output_file"
+cp "$INBOX" "$STATE_DIR/current_task.json"
+
+run_array() {
+  local field="$1"
+  local phase="$2"
+  local fail_fast="$3"
+  local count i cmd rc=0
+  count="$(jq ".$field | length" "$INBOX")"
+  for ((i=0; i<count; i++)); do
+    cmd="$(jq -r ".$field[$i]" "$INBOX")"
+    {
+      printf '\n===== %s %d/%d =====\n' "$phase" "$((i+1))" "$count"
+      printf '$ %s\n' "$cmd"
+    } >> "$output_file"
+    bash -lc "$cmd" >> "$output_file" 2>&1
+    rc=$?
+    printf '[exit_code=%d]\n' "$rc" >> "$output_file"
+    if (( rc != 0 )) && [[ "$fail_fast" == "true" ]]; then
+      return "$rc"
+    fi
+  done
+  return "$rc"
+}
+
+attempt=0
+steps_rc=1
+while (( attempt < requested_attempts )); do
+  attempt=$((attempt+1))
+  printf '\n######## ATTEMPT %d/%d ########\n' "$attempt" "$requested_attempts" >> "$output_file"
+  run_array steps STEP true
+  steps_rc=$?
+  if (( steps_rc == 0 )); then
+    break
+  fi
+  if (( attempt < requested_attempts )); then
+    printf '\nStep phase failed; retrying task attempt.\n' >> "$output_file"
+  fi
+done
+
+acceptance_failures=0
+if (( steps_rc == 0 )); then
+  count="$(jq '.acceptance | length' "$INBOX")"
+  for ((i=0; i<count; i++)); do
+    cmd="$(jq -r ".acceptance[$i]" "$INBOX")"
+    {
+      printf '\n===== ACCEPTANCE %d/%d =====\n' "$((i+1))" "$count"
+      printf '$ %s\n' "$cmd"
+    } >> "$output_file"
+    bash -lc "$cmd" >> "$output_file" 2>&1
+    rc=$?
+    printf '[exit_code=%d]\n' "$rc" >> "$output_file"
+    if (( rc != 0 )); then
+      acceptance_failures=$((acceptance_failures+1))
+    fi
+  done
+fi
+
+finished_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+status="passed"
+if (( steps_rc != 0 )); then
+  status="failed"
+elif (( acceptance_failures > 0 )); then
+  status="failed"
+fi
+
+container_summary="unavailable"
+if command -v docker >/dev/null 2>&1; then
+  container_summary="$(docker ps -a --format '{{.Names}}|{{.Image}}|{{.Status}}' 2>/dev/null | head -100 || true)"
+fi
+
+git_head="$(git rev-parse HEAD 2>/dev/null || true)"
+host="$(hostname 2>/dev/null || true)"
+
+jq -n \
+  --arg task_id "$task_id" \
+  --arg goal "$goal" \
+  --arg status "$status" \
+  --arg started_at "$started_at" \
+  --arg finished_at "$finished_at" \
+  --arg host "$host" \
+  --arg git_head "$git_head" \
+  --arg docker_state "$container_summary" \
+  --argjson attempts "$attempt" \
+  --argjson step_exit_code "$steps_rc" \
+  --argjson acceptance_failures "$acceptance_failures" \
+  '{task_id:$task_id,goal:$goal,status:$status,started_at:$started_at,finished_at:$finished_at,host:$host,git_head:$git_head,attempts:$attempts,step_exit_code:$step_exit_code,acceptance_failures:$acceptance_failures,docker_state:$docker_state}' \
+  > "$OUTBOX/LAST_RESULT.json"
+
+{
+  printf '# RWR Agent Result\n\n'
+  printf -- '- Task: `%s`\n' "$task_id"
+  printf -- '- Status: **%s**\n' "$status"
+  printf -- '- Goal: %s\n' "$goal"
+  printf -- '- Attempts: %d\n' "$attempt"
+  printf -- '- Step exit code: `%d`\n' "$steps_rc"
+  printf -- '- Acceptance failures: `%d`\n' "$acceptance_failures"
+  printf -- '- Started: `%s`\n' "$started_at"
+  printf -- '- Finished: `%s`\n' "$finished_at"
+  printf '\nSee `LAST_OUTPUT.txt` for command output.\n'
+} > "$OUTBOX/LAST_RESULT.md"
+
+cp "$OUTBOX/LAST_RESULT.json" "$history/result.json"
+cp "$OUTBOX/LAST_RESULT.md" "$history/result.md"
+cp "$OUTBOX/LAST_OUTPUT.txt" "$history/output.txt"
+printf '%s\n' "$task_id" >> "$COMPLETED"
+rm -f "$STATE_DIR/current_task.json"
+
+git add AGENT/outbox AGENT/history AGENT/state/completed_tasks.txt
+if ! git diff --cached --quiet; then
+  git -c user.name="RWR Lab Agent" -c user.email="rwr-lab-agent@localhost" commit -m "agent: report $task_id ($status)" --quiet || exit 5
+  git push origin "$TASK_BRANCH" --quiet || {
+    log "result committed locally but push failed"
+    exit 6
+  }
+fi
+
+log "task $task_id finished: $status"
+[[ "$status" == "passed" ]]

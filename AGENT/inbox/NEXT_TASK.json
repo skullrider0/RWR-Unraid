@@ -1,0 +1,12 @@
+{
+  "task_id": "bootstrap-0000",
+  "goal": "Bootstrap placeholder. Do not execute real development work from this task.",
+  "max_attempts": 1,
+  "steps": [
+    "printf '%s\n' 'RWR agent bootstrap placeholder'"
+  ],
+  "acceptance": [
+    "test -f ROADMAP.md",
+    "test -f Dockerfile"
+  ]
+}

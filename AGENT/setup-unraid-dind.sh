@@ -50,6 +50,7 @@ set -u
 REPO_DIR=/workspace/RWR-Unraid
 TASK_BRANCH="${RWR_AGENT_BRANCH:-agent/tasks}"
 TOKEN_FILE=/run/secrets/github-token
+export RWR_AGENT_REPO="$REPO_DIR"
 
 /usr/local/bin/dockerd-entrypoint.sh dockerd > /var/log/dockerd.log 2>&1 &
 dockerd_pid=$!
@@ -126,6 +127,7 @@ docker run -d \
   --privileged \
   --network bridge \
   -e RWR_AGENT_BRANCH="$TASK_BRANCH" \
+  -e RWR_AGENT_REPO="/workspace/RWR-Unraid" \
   -v "$BASE_DIR/workspace:/workspace" \
   -v "$BASE_DIR/docker-data:/var/lib/docker" \
   -v "$TOKEN_FILE:/run/secrets/github-token:ro" \

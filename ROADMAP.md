@@ -88,7 +88,7 @@ Phase 2 completed on August 28, 2026. The final implementation uses the game-pro
 
 # Phase 3 — Startup and Reliability Improvements
 
-**Status: FINAL UNRAID VALIDATION**
+**Status: CLOSEOUT — FINAL UNRAID CHECKS**
 
 Goal: make failures obvious and container behavior predictable.
 
@@ -104,8 +104,23 @@ Goal: make failures obvious and container behavior predictable.
 - [x] Add bounded retries for transient Steam network failures only
 - [x] Add managed vanilla Invasion mission autosave/load and final save during graceful shutdown
 - [x] Add managed post-victory player map voting for unfinished Invasion maps
+- [x] Add a read-only Phase 3 live-validation helper
 
-Final live checks: pull the published image on Unraid, confirm a normal restart skips SteamCMD, confirm `VALIDATE_ON_START=true` completes successfully, and confirm Docker stop produces a clean RWR console shutdown.
+Validated on the real Unraid server:
+
+- [x] Container reaches `Game loaded` and automatically starts managed Invasion
+- [x] Mission progress saves and restores across a container restart
+- [x] GitHub Actions builds and publishes the current image successfully
+
+Final closeout checks:
+
+- [ ] Pull or force-update the latest published image and run `phase3-live-check.sh`
+- [ ] Confirm a normal restart reports `SteamCMD update skipped`
+- [ ] Confirm one start with `VALIDATE_ON_START=true` completes successfully
+- [ ] Confirm Docker stop reports `RWR server stopped cleanly`
+- [ ] Complete a map and confirm majority voting advances to the selected unfinished map
+
+The phase is complete when the live checker has no failures and the post-victory vote succeeds on Unraid.
 
 ### Security rule
 

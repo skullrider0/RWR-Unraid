@@ -71,6 +71,18 @@ SteamCMD retries transient connection failures according to `STEAMCMD_RETRIES`, 
 
 When Unraid stops the container, the startup controller sends `save_profiles`, `stop_server`, and then `exit` through the RWR console. Stopping the game mode runs its final managed mission save before the surrounding console exits. It waits up to `SHUTDOWN_TIMEOUT` seconds, then uses SIGTERM and finally SIGKILL only if RWR does not exit. The seven-second default plus its short signal fallback fits inside Docker's normal ten-second stop window.
 
+### Phase 3 live validation
+
+After pulling or force-updating the current image, run the read-only closeout checker from the Unraid terminal:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/skullrider0/RWR-Unraid/main/phase3-live-check.sh | bash
+```
+
+The checker inspects `RunningWithRifles` by default. Pass another container name as the first argument if needed. It verifies the running image, direct-pool `/serverdata` mount, install marker, TCP/UDP publication, icon label, current-start logs, normal SteamCMD skip or requested validation, known fatal errors, and any recorded clean console shutdown. It does not stop, restart, or modify the container.
+
+To finish the shutdown check, use Unraid's **Stop** and **Start** controls on the same container and rerun the command. To finish install validation, temporarily set `VALIDATE_ON_START=true`, supply the Steam credentials, restart once, wait for `Game loaded`, run the checker, then return the setting to `false`. The last manual Phase 3 check is completing a map and confirming that a majority `/vote` advances to the selected unfinished map.
+
 The bundled vanilla `start_invasion.as` script starts its game server on port `1240`. Publish both TCP and UDP port `1240` from the container. If players connect over the internet, forward port `1240` to the Unraid server in the router and allow it through any host firewall.
 
 After the lobby reaches `Game loaded`, the startup controller sends:

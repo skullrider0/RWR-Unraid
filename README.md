@@ -49,7 +49,7 @@ Environment variables:
 - `FACTION` - client faction: `0` greenbelts, `1` graycollars, or `2` brownpants
 - `PERSISTENCY` - profile persistence mode: `forever` (default) or `forever_and_match`
 - `MISSION_PERSISTENCE` - `true` (default) to autosave and restore vanilla Invasion mission progress
-- `MAP_VOTING` - `true` (default) to enable a 30-second player vote for the next unfinished Invasion map
+- `MAP_VOTING` - `true` (default) to wait for a player majority to choose the next unfinished Invasion map
 - `ADMIN_NAMES` - optional comma-separated RWR usernames granted administrator access
 
 Use a dedicated Steam account that owns RWR rather than your primary account. Credentials are not required for an ordinary restart after a complete installation has been verified, but they are required whenever SteamCMD must install, update, validate, or repair the game.
@@ -99,7 +99,7 @@ Vanilla dedicated Invasion leaves its metagame `save()` and `load()` methods emp
 
 Set `MISSION_PERSISTENCE=false` only when you intentionally want vanilla dedicated Invasion to start fresh. This setting applies to the managed `start_invasion.as` mode; custom game-mode scripts retain their own save behavior.
 
-With `MAP_VOTING=true`, each successful map opens a 30-second ballot containing up to three unfinished maps. Players use `/vote 1`, `/vote 2`, or `/vote 3`; `/maps` repeats the available choices privately. A player may change their vote before the timer ends. The highest total wins, ties prefer the earlier listed option, and option 1 is selected when nobody votes. An administrator or moderator can still use RWR's `/warp <index>` command to override an active vote.
+With `MAP_VOTING=true`, each successful map opens an indefinite ballot containing up to three unfinished maps. Players use `/vote 1`, `/vote 2`, or `/vote 3`; `/maps` repeats the available choices privately. The server remains on the completed map until one choice receives more than half of the currently connected players. A solo player therefore advances with one vote, players may change their votes, and disconnected-player votes are ignored. An administrator or moderator can still use RWR's `/warp <index>` command to override an active vote.
 
 Map voting applies only to the managed vanilla `start_invasion.as` mode. Set `MAP_VOTING=false` to restore the normal Invasion map-selection behavior.
 

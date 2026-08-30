@@ -65,7 +65,12 @@ grep -Fq 'class RwrUnraidMapVoteRotator : MapRotatorInvasion' "$MAP_VOTE_SOURCE"
 grep -Fq 'protected void readyToAdvance() override' "$MAP_VOTE_SOURCE"
 grep -Fq 'checkCommand(message, "vote")' "$MAP_VOTE_SOURCE"
 grep -Fq 'checkCommand(message, "maps")' "$MAP_VOTE_SOURCE"
-grep -Fq 'waitAndStart(0.0f, false);' "$MAP_VOTE_SOURCE"
+grep -Fq 'protected int getMajorityChoice()' "$MAP_VOTE_SOURCE"
+grep -Fq 'waitAndStart(1.0f, false);' "$MAP_VOTE_SOURCE"
+if grep -Fq 'm_voteTimeLeft' "$MAP_VOTE_SOURCE"; then
+  echo "Timed map voting was unexpectedly enabled."
+  exit 1
+fi
 
 if [ "$SOURCE_CHECKSUM" != "$(sha256sum "$SOURCE_SCRIPT" | awk '{print $1}')" ]; then
   echo "Source RWR script was modified."

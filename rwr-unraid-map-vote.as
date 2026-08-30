@@ -1,13 +1,12 @@
 // Post-victory map voting for the managed RWR Unraid Invasion mode.
 //
 // Vanilla Invasion commits to the first unfinished stage as soon as a match
-// ends. This rotator pauses that decision for 30 seconds, presents up to three
-// unfinished maps, and lets connected players vote through chat.
+// ends. This rotator pauses that decision indefinitely, presents up to three
+// unfinished maps, and waits for a majority of connected players to choose.
 
 class RwrUnraidMapVoteRotator : MapRotatorInvasion {
 	protected bool m_voteActive;
-	protected float m_voteTimeLeft;
-	protected bool m_tenSecondWarningSent;
+	protected float m_majorityCheckTimer;
 	protected array<int> m_voteStageIndices;
 	protected array<string> m_voterNames;
 	protected array<int> m_voterChoices;
@@ -31,16 +30,7 @@ class RwrUnraidMapVoteRotator : MapRotatorInvasion {
 			return;
 		}
 
-		if (m_voteStageIndices.size() == 1) {
-			int stageIndex = m_voteStageIndices[0];
-			sendFactionMessage(m_metagame, 0, "Next map: " + getMapName(stageIndex));
-			resetVote();
-			commitToMapChange(stageIndex);
-			return;
-		}
-
 		m_voteActive = true;
-		m_voteTimeLeft = 30.0f;
 		announceVoteOptions();
 	}
 
@@ -49,14 +39,13 @@ class RwrUnraidMapVoteRotator : MapRotatorInvasion {
 			return;
 		}
 
-		m_voteTimeLeft -= time;
-		if (!m_tenSecondWarningSent && m_voteTimeLeft <= 10.0f) {
-			m_tenSecondWarningSent = true;
-			sendFactionMessage(m_metagame, 0, "Map vote: 10 seconds remaining. Type /vote 1, /vote 2, or /vote 3.");
-		}
-
-		if (m_voteTimeLeft <= 0.0f) {
-			finishVote();
+		m_majorityCheckTimer -= time;
+		if (m_majorityCheckTimer <= 0.0f) {
+			m_majorityCheckTimer = 1.0f;
+			int winningChoice = getMajorityChoice();
+			if (winningChoice >= 0) {
+				finishVote(winningChoice);
+			}
 		}
 	}
 
@@ -111,10 +100,18 @@ class RwrUnraidMapVoteRotator : MapRotatorInvasion {
 
 		sendPrivateMessage(m_metagame, senderId,
 			"Vote recorded for " + getMapName(m_voteStageIndices[choice]) + ".");
+
+		int winningChoice = getMajorityChoice();
+		if (winningChoice >= 0) {
+			finishVote(winningChoice);
+		}
 	}
 
 	protected void announceVoteOptions(int playerId = -1) {
-		string header = "Choose the next map. Vote ends in 30 seconds:";
+		array<const XmlElement@> players = getPlayers(m_metagame);
+		int requiredVotes = int(players.size() / 2) + 1;
+		string header = "Choose the next map. Voting stays open until one option has " +
+			requiredVotes + " vote(s):";
 		if (playerId >= 0) {
 			sendPrivateMessage(m_metagame, playerId, header);
 		} else {
@@ -131,43 +128,46 @@ class RwrUnraidMapVoteRotator : MapRotatorInvasion {
 		}
 	}
 
-	protected void finishVote() {
+	protected int getMajorityChoice() {
+		array<const XmlElement@> players = getPlayers(m_metagame);
+		int requiredVotes = int(players.size() / 2) + 1;
 		array<int> totals;
 		totals.resize(m_voteStageIndices.size());
-		for (uint i = 0; i < m_voterChoices.size(); ++i) {
-			int choice = m_voterChoices[i];
-			if (choice >= 0 && choice < int(totals.size())) {
-				totals[choice] += 1;
+
+		// Only count people who are still connected. This prevents a player who
+		// left during an indefinite ballot from supplying a stale deciding vote.
+		for (uint i = 0; i < players.size(); ++i) {
+			string playerName = players[i].getStringAttribute("name");
+			int voterIndex = m_voterNames.find(playerName);
+			if (voterIndex >= 0) {
+				int choice = m_voterChoices[voterIndex];
+				if (choice >= 0 && choice < int(totals.size())) {
+					totals[choice] += 1;
+				}
 			}
 		}
 
-		int winningChoice = 0;
-		for (uint i = 1; i < totals.size(); ++i) {
-			if (totals[i] > totals[winningChoice]) {
-				winningChoice = i;
+		for (uint i = 0; i < totals.size(); ++i) {
+			if (totals[i] >= requiredVotes) {
+				return i;
 			}
 		}
+		return -1;
+	}
 
+	protected void finishVote(int winningChoice) {
 		int winningStage = m_voteStageIndices[winningChoice];
-		if (m_voterChoices.size() == 0) {
-			sendFactionMessage(m_metagame, 0,
-				"No map votes were cast. Continuing to " + getMapName(winningStage) + ".");
-		} else {
-			sendFactionMessage(m_metagame, 0,
-				"Map vote winner: " + getMapName(winningStage) + " with " + totals[winningChoice] + " vote(s).");
-		}
+		sendFactionMessage(m_metagame, 0,
+			"Map choice confirmed: " + getMapName(winningStage) + ". Preparing extraction.");
 
 		resetVote();
 		m_nextStageIndex = winningStage;
-		// The vote consumes the normal 30-second post-match delay, so change
-		// immediately instead of adding another countdown.
-		waitAndStart(0.0f, false);
+		waitAndStart(1.0f, false);
 	}
 
 	protected void resetVote() {
 		m_voteActive = false;
-		m_voteTimeLeft = 0.0f;
-		m_tenSecondWarningSent = false;
+		m_majorityCheckTimer = 1.0f;
 		m_voteStageIndices.resize(0);
 		m_voterNames.resize(0);
 		m_voterChoices.resize(0);

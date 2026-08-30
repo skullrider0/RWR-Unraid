@@ -295,4 +295,4 @@ Use this section for major milestones rather than every small commit.
 ### 2026-08-30
 
 - Fixed first-run mission persistence so RWR's empty saved-data response initializes a fresh Invasion rotation instead of dereferencing a null XML child.
-- Added a 30-second post-victory map ballot with `/vote 1`, `/vote 2`, `/vote 3`, `/maps`, and the existing administrator `/warp` override.
+- Added an indefinite post-victory majority ballot with `/vote 1`, `/vote 2`, `/vote 3`, `/maps`, and the existing administrator `/warp` override.

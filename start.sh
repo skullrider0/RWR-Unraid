@@ -9,14 +9,18 @@ ADMIN_RENDERER="${ADMIN_RENDERER:-/usr/local/bin/rwr-render-admins}"
 START_SCRIPT_RENDERER="${START_SCRIPT_RENDERER:-/usr/local/bin/rwr-render-start-script}"
 PERSISTENCE_SCRIPT="${PERSISTENCE_SCRIPT:-/usr/local/share/rwr/rwr-unraid-persistent-invasion.as}"
 MAP_VOTE_SCRIPT="${MAP_VOTE_SCRIPT:-/usr/local/share/rwr/rwr-unraid-map-vote.as}"
+HEALTH_DIR="${RWR_HEALTH_DIR:-/tmp/rwr-health}"
 MARKER="$SERVERDIR/.rwr-installed"
 source "$RWR_LIBDIR/start-options.sh"
 source "$RWR_LIBDIR/install-utils.sh"
 source "$RWR_LIBDIR/runtime-utils.sh"
+source "$RWR_LIBDIR/health-utils.sh"
 mkdir -p "$SERVERDIR"
+write_rwr_health_state "$HEALTH_DIR" starting
 echo "=============================================="
 echo " Running With Rifles - Unraid Docker"
 echo "=============================================="
+echo "Container revision: ${RWR_CONTAINER_REVISION:-development}"
 
 UPDATE_ON_START="${UPDATE_ON_START:-false}"
 VALIDATE_ON_START="${VALIDATE_ON_START:-false}"
@@ -73,6 +77,13 @@ else
   echo "RWR installation verified; SteamCMD update skipped."
 fi
 
+RWR_STEAM_BUILD_ID="$(find_rwr_steam_build_id "$SERVERDIR" "$STEAMCMDDIR" || true)"
+if [ -n "$RWR_STEAM_BUILD_ID" ]; then
+  echo "RWR Steam build ID: $RWR_STEAM_BUILD_ID"
+else
+  echo "RWR Steam build ID: unavailable (Steam manifest not found)"
+fi
+
 for config_file in config.xml settings.xml; do
   if [ ! -f "$SERVERDIR/$config_file" ]; then
     echo "Creating default RWR $config_file..."
@@ -107,6 +118,7 @@ START_SCRIPT="${START_SCRIPT:-start_invasion.as}"
 START_COMMAND="${START_COMMAND:-}"
 STARTUP_TIMEOUT="${STARTUP_TIMEOUT:-180}"
 SHUTDOWN_TIMEOUT="${SHUTDOWN_TIMEOUT:-7}"
+SERVER_PORT="${SERVER_PORT:-1240}"
 MANAGE_SERVER_SETTINGS="${MANAGE_SERVER_SETTINGS:-true}"
 parse_server_arguments "${SERVER_ARGS:-}"
 validate_start_command "$START_COMMAND"
@@ -115,6 +127,7 @@ case "$AUTO_START" in
   true|1|yes) ;;
   false|0|no)
     echo "Automatic game-mode startup disabled."
+    write_rwr_health_state "$HEALTH_DIR" manual
     exec "$SERVER_BIN" "${SERVER_ARGUMENTS[@]}"
     ;;
   *)
@@ -183,6 +196,7 @@ forward_shutdown() {
     return
   fi
   SHUTDOWN_REQUESTED=true
+  write_rwr_health_state "$HEALTH_DIR" stopping "$SERVER_PID" "$SERVER_PORT"
   if [ -n "$SERVER_PID" ]; then
     graceful_stop_rwr "$SERVER_PID" 3 "$SHUTDOWN_TIMEOUT"
   fi
@@ -193,6 +207,7 @@ trap forward_shutdown TERM INT
 
 "$SERVER_BIN" "${SERVER_ARGUMENTS[@]}" <"$COMMAND_PIPE" > >(tee "$CONSOLE_LOG") 2>&1 &
 SERVER_PID=$!
+write_rwr_health_state "$HEALTH_DIR" starting "$SERVER_PID" "$SERVER_PORT"
 exec 3>"$COMMAND_PIPE"
 
 SERVER_READY=false
@@ -203,6 +218,7 @@ for ((second = 0; second < STARTUP_TIMEOUT; second++)); do
   fi
 
   if ! kill -0 "$SERVER_PID" 2>/dev/null; then
+    write_rwr_health_state "$HEALTH_DIR" failed
     echo "ERROR: RWR exited before reaching the game console."
     wait "$SERVER_PID" || true
     exit 1
@@ -212,6 +228,7 @@ for ((second = 0; second < STARTUP_TIMEOUT; second++)); do
 done
 
 if [ "$SERVER_READY" != "true" ]; then
+  write_rwr_health_state "$HEALTH_DIR" failed "$SERVER_PID" "$SERVER_PORT"
   echo "ERROR: RWR did not reach the game console within ${STARTUP_TIMEOUT} seconds."
   kill -TERM "$SERVER_PID" 2>/dev/null || true
   wait "$SERVER_PID" || true
@@ -226,11 +243,17 @@ else
   printf 'start_script %s\n' "$START_SCRIPT" >&3
 fi
 
+RWR_RUNTIME_VERSION="$(extract_rwr_runtime_version "$CONSOLE_LOG")"
+echo "Runtime diagnostics: rwr_version=${RWR_RUNTIME_VERSION:-unknown} steam_build_id=${RWR_STEAM_BUILD_ID:-unknown}"
+write_rwr_health_state "$HEALTH_DIR" ready "$SERVER_PID" "$SERVER_PORT"
+
 set +e
 wait "$SERVER_PID"
 SERVER_STATUS=$?
 set -e
 if [ "$SHUTDOWN_REQUESTED" = "true" ]; then
+  write_rwr_health_state "$HEALTH_DIR" stopped
   exit 0
 fi
+write_rwr_health_state "$HEALTH_DIR" failed
 exit "$SERVER_STATUS"

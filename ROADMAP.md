@@ -130,14 +130,26 @@ Never print `STEAM_PASS`, authentication tokens, or other secrets into container
 
 # Phase 4 — Container Health and Observability
 
+**Status: IMPLEMENTED — LIVE UNRAID VALIDATION**
+
 Goal: make it easy for Unraid to tell whether the server is actually healthy.
 
-- [ ] Research a reliable RWR health signal
-- [ ] Add Docker `HEALTHCHECK` if a trustworthy signal exists
-- [ ] Show useful version/build information at startup
-- [ ] Log RWR install/update version where possible
-- [ ] Document expected startup time for a first installation
-- [ ] Document common log messages and known failure states
+- [x] Research a reliable RWR health signal
+- [x] Add Docker `HEALTHCHECK` using controller readiness, the exact RWR PID, and the UDP listener
+- [x] Show useful container revision and RWR runtime version information at startup
+- [x] Log the Steam build ID when an installed app manifest is available
+- [x] Document expected first-install and normal-restart timing
+- [x] Document common log messages and known failure states
+- [x] Add automated health-state, process, IPv4/IPv6 UDP, and version parsing tests
+
+Final live checks:
+
+- [ ] Pull the published Phase 4 image on Unraid
+- [ ] Confirm the container transitions from `health: starting` to `healthy`
+- [ ] Confirm `docker exec RunningWithRifles /usr/local/bin/rwr-healthcheck` reports the RWR PID and UDP port
+- [ ] Confirm startup logs show the container revision and RWR runtime version
+
+Phase 4 is complete when the published image reaches `healthy` on the real Unraid deployment.
 
 Avoid a fake healthcheck that only tests whether the shell process exists.
 

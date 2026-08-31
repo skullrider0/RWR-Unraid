@@ -16,6 +16,8 @@ GitHub-ready Docker repository for a Running With Rifles dedicated server on Unr
 - Saves and restores vanilla Invasion mission progress
 - Lets players vote for the next unfinished Invasion map after each victory
 - Gracefully saves and stops RWR through its console before escalating to process signals
+- Reports Docker health from RWR readiness, the server process, and its UDP listener
+- Logs the container revision, RWR runtime version, and Steam build ID when available
 - Preserves existing configuration files and server data across container recreation/restarts
 
 ## Unraid
@@ -82,6 +84,51 @@ curl -fsSL https://raw.githubusercontent.com/skullrider0/RWR-Unraid/main/phase3-
 The checker inspects `RunningWithRifles` by default. Pass another container name as the first argument if needed. It verifies the running image, direct-pool `/serverdata` mount, install marker, TCP/UDP publication, icon label, current-start logs, normal SteamCMD skip or requested validation, known fatal errors, and any recorded clean console shutdown. It does not stop, restart, or modify the container.
 
 To finish the shutdown check, use Unraid's **Stop** and **Start** controls on the same container and rerun the command. To finish install validation, temporarily set `VALIDATE_ON_START=true`, supply the Steam credentials, restart once, wait for `Game loaded`, run the checker, then return the setting to `false`. The last manual Phase 3 check is completing a map and confirming that a majority `/vote` advances to the selected unfinished map.
+
+### Container health and startup diagnostics
+
+The image includes a Docker healthcheck that requires all three of these signals:
+
+1. the startup controller reached RWR's `Game loaded` console state and issued the configured game-mode command;
+2. the exact RWR child process recorded by the controller is still running;
+3. RWR is listening on the configured UDP game port.
+
+This means a living shell or stalled lobby is not enough to report healthy. During installation and loading, Unraid may show `health: starting`. After the game mode binds its port, the status changes to `healthy`. A first installation is given a 45-minute Docker start period so downloading, validation, Steam Guard approval, and RWR's initial load do not consume healthcheck retries.
+
+Check the current result from the Unraid terminal:
+
+```bash
+docker inspect RunningWithRifles \
+  --format 'status={{.State.Health.Status}} failures={{.State.Health.FailingStreak}}'
+
+docker exec RunningWithRifles /usr/local/bin/rwr-healthcheck
+```
+
+`AUTO_START=false` intentionally leaves the health state unsupported/unhealthy because no game mode is started and no game port is expected to listen. Docker records an unhealthy state but does not automatically restart a container solely because a healthcheck fails.
+
+Startup logs identify the image and installed game where the available metadata permits it:
+
+```text
+Container revision: <Git commit SHA>
+RWR Steam build ID: <Steam build ID or unavailable>
+Runtime diagnostics: rwr_version=<version> steam_build_id=<ID or unknown>
+```
+
+The first launch downloads and validates roughly 2.5 GB of RWR data. On a normal broadband connection, allow approximately 5–20 minutes after Steam Guard approval; slower storage, Steam service delays, or validation can take longer. A restart with a verified installation skips SteamCMD and normally reaches the game console within the configured three-minute `STARTUP_TIMEOUT`.
+
+Common messages:
+
+| Log message | Meaning / action |
+| --- | --- |
+| `RWR installation verified; SteamCMD update skipped.` | Normal credential-free restart; the persistent installation passed checks. |
+| `Startup install validation requested` | `VALIDATE_ON_START=true`; Steam credentials and possibly Steam Guard approval are required. |
+| `Game loaded` followed by `Starting RWR game mode` | The lobby console became ready and the configured game mode was issued. |
+| `Runtime diagnostics: rwr_version=...` | Runtime version/build summary used for support reports. |
+| `health: starting` | Installation or RWR/game-mode startup is still in progress. |
+| `unhealthy: RWR is not listening on UDP port ...` | The process reached the controller's ready state but the game server did not bind its configured port. |
+| `CHECK: map_config element not found` | `/serverdata` probably uses the incompatible `/mnt/user` FUSE path; use a direct pool path. |
+| `An exception has occurred!` or `!!!EXECUTION HALTED!!!` | Fatal RWR startup failure; inspect nearby `rwr_server.log` lines for the first cause. |
+| `RWR server stopped cleanly.` | Docker stop completed through the RWR console and final managed save path. |
 
 The bundled vanilla `start_invasion.as` script starts its game server on port `1240`. Publish both TCP and UDP port `1240` from the container. If players connect over the internet, forward port `1240` to the Unraid server in the router and allow it through any host firewall.
 

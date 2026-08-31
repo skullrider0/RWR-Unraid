@@ -44,7 +44,7 @@ if [[ ! -s "$TOKEN_FILE" ]]; then
 fi
 
 validate_token() {
-  local token status login repo_status permissions
+  local token status login repo_status
   token="$(cat "$TOKEN_FILE")"
   status="$(curl -sS -o "$BASE_DIR/secrets/token-user-check.json" -w '%{http_code}' \
     -H "Authorization: Bearer $token" \
@@ -56,14 +56,7 @@ validate_token() {
     unset token
     return 1
   fi
-  login="$(python3 - <<'PY' "$BASE_DIR/secrets/token-user-check.json"
-import json,sys
-try:
-    print(json.load(open(sys.argv[1])).get('login',''))
-except Exception:
-    print('')
-PY
-)"
+  login="$(sed -n 's/.*"login"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$BASE_DIR/secrets/token-user-check.json" | head -1)"
   rm -f "$BASE_DIR/secrets/token-user-check.json"
   if [[ "$login" != "$GITHUB_USER" ]]; then
     echo "Stored token authenticates as '$login', expected '$GITHUB_USER'." >&2
@@ -81,17 +74,12 @@ PY
     rm -f "$BASE_DIR/secrets/token-repo-check.json"
     return 1
   fi
-  permissions="$(python3 - <<'PY' "$BASE_DIR/secrets/token-repo-check.json"
-import json,sys
-try:
-    p=json.load(open(sys.argv[1])).get('permissions') or {}
-    print('true' if p.get('push') else 'false')
-except Exception:
-    print('false')
-PY
-)"
+  if ! grep -Eq '"push"[[:space:]]*:[[:space:]]*true' "$BASE_DIR/secrets/token-repo-check.json"; then
+    rm -f "$BASE_DIR/secrets/token-repo-check.json"
+    return 1
+  fi
   rm -f "$BASE_DIR/secrets/token-repo-check.json"
-  [[ "$permissions" == "true" ]]
+  return 0
 }
 
 if ! validate_token; then

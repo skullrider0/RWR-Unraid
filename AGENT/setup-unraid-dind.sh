@@ -6,6 +6,7 @@ CONTAINER_NAME="${RWR_AGENT_CONTAINER:-RWR-Test-Agent}"
 IMAGE_NAME="${RWR_AGENT_IMAGE:-rwr-test-agent:local}"
 REPO_URL="https://github.com/skullrider0/RWR-Unraid.git"
 TASK_BRANCH="agent/tasks"
+GITHUB_USER="skullrider0"
 
 if [[ "${EUID:-$(id -u)}" -ne 0 ]]; then
   echo "Run this installer from the Unraid terminal as root." >&2
@@ -13,27 +14,93 @@ if [[ "${EUID:-$(id -u)}" -ne 0 ]]; then
 fi
 
 command -v docker >/dev/null 2>&1 || { echo "Docker is required." >&2; exit 1; }
+command -v curl >/dev/null 2>&1 || { echo "curl is required." >&2; exit 1; }
 
 mkdir -p "$BASE_DIR/build" "$BASE_DIR/workspace" "$BASE_DIR/docker-data" "$BASE_DIR/secrets"
 chmod 700 "$BASE_DIR/secrets"
 
 TOKEN_FILE="$BASE_DIR/secrets/github-token"
-if [[ ! -s "$TOKEN_FILE" ]]; then
+prompt_token() {
+  rm -f "$TOKEN_FILE"
   if [[ ! -r /dev/tty ]]; then
-    echo "An interactive terminal is required to enter the GitHub token." >&2
+    echo "No usable GitHub token is stored at $TOKEN_FILE." >&2
+    echo "Create that file manually with mode 600, then rerun this installer." >&2
     exit 1
   fi
   printf 'GitHub fine-grained token for RWR-Unraid (Contents: Read and write): ' > /dev/tty
-  IFS= read -r -s token < /dev/tty
+  IFS= read -r -s token < /dev/tty || true
   printf '\n' > /dev/tty
-  if [[ -z "$token" ]]; then
+  if [[ -z "${token:-}" ]]; then
     echo "A GitHub token is required so the agent can push result commits." >&2
     exit 1
   fi
   printf '%s' "$token" > "$TOKEN_FILE"
   unset token
   chmod 600 "$TOKEN_FILE"
+}
+
+if [[ ! -s "$TOKEN_FILE" ]]; then
+  prompt_token
 fi
+
+validate_token() {
+  local token status login repo_status permissions
+  token="$(cat "$TOKEN_FILE")"
+  status="$(curl -sS -o "$BASE_DIR/secrets/token-user-check.json" -w '%{http_code}' \
+    -H "Authorization: Bearer $token" \
+    -H 'Accept: application/vnd.github+json' \
+    -H 'X-GitHub-Api-Version: 2022-11-28' \
+    https://api.github.com/user || true)"
+  if [[ "$status" != "200" ]]; then
+    rm -f "$BASE_DIR/secrets/token-user-check.json"
+    unset token
+    return 1
+  fi
+  login="$(python3 - <<'PY' "$BASE_DIR/secrets/token-user-check.json"
+import json,sys
+try:
+    print(json.load(open(sys.argv[1])).get('login',''))
+except Exception:
+    print('')
+PY
+)"
+  rm -f "$BASE_DIR/secrets/token-user-check.json"
+  if [[ "$login" != "$GITHUB_USER" ]]; then
+    echo "Stored token authenticates as '$login', expected '$GITHUB_USER'." >&2
+    unset token
+    return 1
+  fi
+
+  repo_status="$(curl -sS -o "$BASE_DIR/secrets/token-repo-check.json" -w '%{http_code}' \
+    -H "Authorization: Bearer $token" \
+    -H 'Accept: application/vnd.github+json' \
+    -H 'X-GitHub-Api-Version: 2022-11-28' \
+    https://api.github.com/repos/skullrider0/RWR-Unraid || true)"
+  unset token
+  if [[ "$repo_status" != "200" ]]; then
+    rm -f "$BASE_DIR/secrets/token-repo-check.json"
+    return 1
+  fi
+  permissions="$(python3 - <<'PY' "$BASE_DIR/secrets/token-repo-check.json"
+import json,sys
+try:
+    p=json.load(open(sys.argv[1])).get('permissions') or {}
+    print('true' if p.get('push') else 'false')
+except Exception:
+    print('false')
+PY
+)"
+  rm -f "$BASE_DIR/secrets/token-repo-check.json"
+  [[ "$permissions" == "true" ]]
+}
+
+if ! validate_token; then
+  echo "Stored GitHub token is invalid or does not have push access to skullrider0/RWR-Unraid." >&2
+  echo "Delete/recreate it with repository access to RWR-Unraid and Contents: Read and write." >&2
+  exit 2
+fi
+
+echo "GitHub token validated for $GITHUB_USER with repository push access."
 
 cat > "$BASE_DIR/build/Dockerfile" <<'DOCKERFILE'
 FROM docker:28-dind
@@ -81,7 +148,7 @@ fi
 cat > /tmp/rwr-git-askpass <<'ASKPASS'
 #!/usr/bin/env sh
 case "$1" in
-  *Username*) printf '%s\n' 'x-access-token' ;;
+  *Username*) printf '%s\n' 'skullrider0' ;;
   *) cat /run/secrets/github-token ;;
 esac
 ASKPASS

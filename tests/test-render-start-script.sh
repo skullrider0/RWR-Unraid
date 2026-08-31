@@ -67,6 +67,11 @@ grep -Fq 'checkCommand(message, "vote")' "$MAP_VOTE_SOURCE"
 grep -Fq 'checkCommand(message, "maps")' "$MAP_VOTE_SOURCE"
 grep -Fq 'protected int getMajorityChoice()' "$MAP_VOTE_SOURCE"
 grep -Fq 'waitAndStart(1.0f, false);' "$MAP_VOTE_SOURCE"
+grep -Fq 'if (parameters[0] == "1")' "$MAP_VOTE_SOURCE"
+if grep -Fq 'isNumeric(' "$MAP_VOTE_SOURCE"; then
+  echo "Unsupported RWR isNumeric helper was unexpectedly used."
+  exit 1
+fi
 if grep -Fq 'm_voteTimeLeft' "$MAP_VOTE_SOURCE"; then
   echo "Timed map voting was unexpectedly enabled."
   exit 1

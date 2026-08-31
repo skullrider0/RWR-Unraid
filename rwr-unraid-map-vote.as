@@ -79,12 +79,22 @@ class RwrUnraidMapVoteRotator : MapRotatorInvasion {
 		}
 
 		array<string> parameters = parseParameters(message, "vote");
-		if (parameters.size() != 1 || !isNumeric(parameters[0])) {
+		int choice = -1;
+		if (parameters.size() == 1) {
+			if (parameters[0] == "1") {
+				choice = 0;
+			} else if (parameters[0] == "2") {
+				choice = 1;
+			} else if (parameters[0] == "3") {
+				choice = 2;
+			}
+		}
+
+		if (choice < 0) {
 			sendPrivateMessage(m_metagame, senderId, "Usage: /vote 1, /vote 2, or /vote 3");
 			return;
 		}
 
-		int choice = parseInt(parameters[0]) - 1;
 		if (choice < 0 || choice >= int(m_voteStageIndices.size())) {
 			sendPrivateMessage(m_metagame, senderId, "That map option is not available. Type /maps to see the choices.");
 			return;

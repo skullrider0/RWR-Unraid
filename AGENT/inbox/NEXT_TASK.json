@@ -1,17 +1,17 @@
 {
-  "task_id": "20260830-0001",
-  "goal": "Validate the current RWR-Unraid repository on the disposable test machine and prove that the container image still builds successfully before autonomous feature work begins.",
+  "task_id": "20260831-0002",
+  "goal": "Build the Phase 4 RWR-Unraid image at commit 1063c223feac0a84e15d5a746eac40ed701eb1d0 and verify its healthcheck, build revision, and full repository tests.",
   "max_attempts": 2,
   "steps": [
-    "bash -n start.sh start-options.sh install-utils.sh runtime-utils.sh render-start-script.sh render-admins.sh phase3-live-check.sh AGENT/bin/lab-agent AGENT/setup.sh",
-    "bash tests/test-render-start-script.sh && bash tests/test-render-admins.sh && bash tests/test-start-options.sh && bash tests/test-install-utils.sh && bash tests/test-runtime-utils.sh && bash tests/test-startup-reliability.sh && bash tests/test-phase3-live-check.sh",
-    "python3 -c 'import xml.etree.ElementTree as ET; ET.parse(\"templates/RunningWithRifles.xml\")'",
-    "docker build -t rwr-unraid:agent-validation ."
+    "git fetch origin main",
+    "test \"$(git rev-parse origin/main)\" = \"1063c223feac0a84e15d5a746eac40ed701eb1d0\"",
+    "git worktree add --detach /tmp/rwr-phase4-20260831-0002 1063c223feac0a84e15d5a746eac40ed701eb1d0",
+    "cd /tmp/rwr-phase4-20260831-0002 && bash tests/test-render-start-script.sh && bash tests/test-render-admins.sh && bash tests/test-start-options.sh && bash tests/test-install-utils.sh && bash tests/test-runtime-utils.sh && bash tests/test-startup-reliability.sh && bash tests/test-phase3-live-check.sh && bash tests/test-health-utils.sh && bash tests/test-healthcheck.sh",
+    "cd /tmp/rwr-phase4-20260831-0002 && docker build --build-arg BUILD_REVISION=1063c223feac0a84e15d5a746eac40ed701eb1d0 -t rwr-unraid:phase4-1063c223 ."
   ],
   "acceptance": [
-    "docker image inspect rwr-unraid:agent-validation >/dev/null",
-    "test -f phase3-live-check.sh",
-    "test -f ROADMAP.md",
-    "git diff --check"
+    "docker image inspect rwr-unraid:phase4-1063c223 --format '{{json .Config.Healthcheck}}' | grep -Fq '/usr/local/bin/rwr-healthcheck'",
+    "docker image inspect rwr-unraid:phase4-1063c223 --format '{{range .Config.Env}}{{println .}}{{end}}' | grep -Fxq 'RWR_CONTAINER_REVISION=1063c223feac0a84e15d5a746eac40ed701eb1d0'",
+    "docker run --rm --entrypoint /bin/bash rwr-unraid:phase4-1063c223 -lc 'test -x /usr/local/bin/rwr-healthcheck && test -r /usr/local/lib/rwr/health-utils.sh'"
   ]
 }
